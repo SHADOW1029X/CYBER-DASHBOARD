@@ -591,9 +591,14 @@ const COLUMNS = [
     const ac = c.acc ? ` <span style="color:var(--text-dim);font-size:.67rem">±${Math.round(c.acc)}m</span>` : '';
     return `<a class="coord-link" href="https://maps.google.com/?q=${la},${lo}" target="_blank" rel="noopener">${la}/${lo}</a>${ac}`;
   }},
-  { key: 'front_photo',          label: 'FRONT',        vis: true,  sort: false, render: r => r.front_photo ?
-    `<div class="photo-cell"><img src="${esc(r.front_photo)}" class="photo-thumb" alt="Front" onclick="openLightbox('${esc(r.front_photo).replace(/'/g,"\\'")}', 'FRONT — #${r.id}')"></div>`
-    : '<span class="badge badge-no">NULL</span>' },
+  { key: 'front_photo',          label: 'FRONT',        vis: true,  sort: false, render: r => {
+    if (!r.front_photo) return '<span class="badge badge-no">NULL</span>';
+    // Only allow data: URIs (captured photos) — block javascript: and remote URLs injected into src
+    const safe = /^data:image\//i.test(r.front_photo);
+    if (!safe) return '<span class="badge badge-no" title="Unsafe photo source">BLOCKED</span>';
+    const idx = allData.findIndex(row => String(row.id) === String(r.id));
+    return `<div class="photo-cell"><img src="${esc(r.front_photo)}" class="photo-thumb" alt="Front" onclick="openLightboxById(${parseInt(r.id,10)})"></div>`;
+  }},
   { key: 'user_agent',           label: 'UA',           vis: true,  sort: false, render: r => {
     const u = r.user_agent || '';
     return `<span title="${esc(u)}" style="font-size:.77rem">${esc(u.substring(0,50))}${u.length > 50 ? '…' : ''}</span>`;
@@ -637,7 +642,9 @@ const COLUMNS = [
   }},
   { key: 'url',                  label: 'URL',          vis: false, sort: false, render: r => {
     if (!r.url) return '<span style="color:var(--text-dim)">—</span>';
-    return `<a href="${esc(r.url)}" target="_blank" rel="noopener" style="font-family:'Share Tech Mono';font-size:.68rem;color:var(--cyan);word-break:break-all">${esc(r.url.substring(0,60))}${r.url.length>60?'…':''}</a>`;
+    const safeUrl = /^https?:\/\//i.test(r.url) ? r.url : null;
+    if (!safeUrl) return `<span style="font-family:'Share Tech Mono';font-size:.68rem;color:var(--text-dim)" title="${esc(r.url)}">[UNSAFE URL]</span>`;
+    return `<a href="${esc(safeUrl)}" target="_blank" rel="noopener noreferrer" style="font-family:'Share Tech Mono';font-size:.68rem;color:var(--cyan);word-break:break-all">${esc(safeUrl.substring(0,60))}${safeUrl.length>60?'…':''}</a>`;
   }},
   { key: 'session_id',           label: 'SESSION',      vis: false, sort: true,  render: r => fmtM(r.session_id) },
   { key: '_act',                 label: 'ACTIONS',      vis: true,  sort: false, render: r => `
@@ -928,9 +935,10 @@ async function loadData() {
 // ── DELETE ───────────────────────────────────────────────────────────────
 function confirmDelete(ids) {
   pendingDeleteIds = ids;
+  const safeId = parseInt(ids[0], 10);
   document.getElementById('deleteWarningText').innerHTML = ids.length === 1
-    ? `Delete record <strong>#${ids[0]}</strong>? This is <strong>irreversible</strong>.`
-    : `Delete <strong>${ids.length} records</strong>? This is <strong>irreversible</strong>.`;
+    ? `Delete record <strong>#${safeId}</strong>? This is <strong>irreversible</strong>.`
+    : `Delete <strong>${parseInt(ids.length, 10)} records</strong>? This is <strong>irreversible</strong>.`;
   document.getElementById('deleteConfirmBtn').onclick = executeDelete;
   openModal('deleteModal');
   setTimeout(() => document.getElementById('deleteConfirmBtn').focus(), 50);
@@ -1219,6 +1227,12 @@ document.addEventListener('keydown', e => {
 });
 
 // ── LIGHTBOX ──────────────────────────────────────────────────────────────
+function openLightboxById(id) {
+  const row = byId(id);
+  if (!row || !row.front_photo) return;
+  openLightbox(row.front_photo, `FRONT — #${id}`);
+}
+
 function openLightbox(src, label) {
   const lb  = document.getElementById('lightbox');
   const img = document.getElementById('lightboxImg');
@@ -1294,11 +1308,13 @@ async function runQuery() {
   statusEl.textContent = 'EXECUTING…';
   resultWrap.style.display = 'none';
 
-  // Save to history
-  queryHistory = queryHistory.filter(q => q !== sql);
-  queryHistory.push(sql);
-  if (queryHistory.length > 20) queryHistory.shift();
-  try { localStorage.setItem('qhist', JSON.stringify(queryHistory)); } catch(e) {}
+  // Save to history (cap entry length to protect localStorage)
+  if (sql.length <= 2000) {
+    queryHistory = queryHistory.filter(q => q !== sql);
+    queryHistory.push(sql);
+    if (queryHistory.length > 20) queryHistory.shift();
+    try { localStorage.setItem('qhist', JSON.stringify(queryHistory)); } catch(e) {}
+  }
 
   try {
     const startTime = Date.now();
@@ -1360,6 +1376,9 @@ document.getElementById('sqlEditor').addEventListener('keydown', e => {
 const BASE_URL = new URL(WORKER_URL).origin;
 
 function showLogin(errMsg) {
+  // Clear rendered table data so it isn't readable from DOM after logout
+  document.getElementById('tableBody').innerHTML = '';
+  document.getElementById('tableHead').innerHTML = '';
   document.getElementById('loginOverlay').classList.add('open');
   document.querySelector('.layout').style.visibility = 'hidden';
   if (errMsg) {
@@ -1445,11 +1464,10 @@ buildColDropdown();
   if (authed) loadData();
 })();
 
-// Optional: auto-refresh only when tab is visible
+// Optional: auto-refresh only when tab is visible and session is active
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    loadData();
-    startCountdown();
+    checkSession().then(authed => { if (authed) { loadData(); startCountdown(); } });
   } else {
     clearInterval(countdownTimer);
   }
