@@ -8,6 +8,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://snowy-fog-b0d1.23amtics322.workers.dev; frame-ancestors 'none'; base-uri 'none'; form-action 'none';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="Referrer-Policy" content="no-referrer">
+  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -39,36 +41,25 @@
       overflow: hidden;
     }
 
-    /* Scanline overlay */
     body::before {
       content: '';
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      pointer-events: none;
+      position: fixed; inset: 0; z-index: 9999; pointer-events: none;
       background: repeating-linear-gradient(
         0deg, transparent, transparent 2px,
         rgba(0,229,255,.012) 2px, rgba(0,229,255,.012) 4px
       );
     }
 
-    /* Grid background */
     body::after {
       content: '';
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
       background-image:
         linear-gradient(rgba(0,229,255,.035) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0,229,255,.035) 1px, transparent 1px);
       background-size: 40px 40px;
     }
 
-    .login-wrap {
-      position: relative;
-      z-index: 1;
-    }
+    .login-wrap { position: relative; z-index: 1; }
 
     .login-box {
       background: var(--panel);
@@ -86,59 +77,34 @@
     }
 
     .login-logo {
-      font-family: 'Orbitron', monospace;
-      font-weight: 900;
-      font-size: 1.6rem;
-      color: var(--cyan);
-      text-shadow: var(--glow-c);
-      letter-spacing: .15em;
-      line-height: 1;
-      margin-bottom: 4px;
+      font-family: 'Orbitron', monospace; font-weight: 900; font-size: 1.6rem;
+      color: var(--cyan); text-shadow: var(--glow-c);
+      letter-spacing: .15em; line-height: 1; margin-bottom: 4px;
     }
 
     .login-title {
-      font-family: 'Orbitron', monospace;
-      font-weight: 900;
-      font-size: 1.1rem;
-      color: var(--cyan);
-      text-shadow: var(--glow-c);
-      letter-spacing: .2em;
-      margin-bottom: 4px;
+      font-family: 'Orbitron', monospace; font-weight: 900; font-size: 1.1rem;
+      color: var(--cyan); text-shadow: var(--glow-c);
+      letter-spacing: .2em; margin-bottom: 4px;
     }
 
     .login-sub {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: .65rem;
-      color: var(--text-dim);
-      letter-spacing: .25em;
-      margin-bottom: 28px;
+      font-family: 'Share Tech Mono', monospace; font-size: .65rem;
+      color: var(--text-dim); letter-spacing: .25em; margin-bottom: 28px;
     }
 
-    .login-field {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      margin-bottom: 14px;
-    }
+    .login-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
 
     .login-label {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: .62rem;
-      color: var(--cyan-dim);
-      letter-spacing: .15em;
+      font-family: 'Share Tech Mono', monospace; font-size: .62rem;
+      color: var(--cyan-dim); letter-spacing: .15em;
     }
 
     .login-input {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 10px 12px;
-      color: var(--text);
-      font-family: 'Share Tech Mono', monospace;
-      font-size: .82rem;
-      outline: none;
-      transition: border-color .2s;
-      width: 100%;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 3px;
+      padding: 10px 12px; color: var(--text);
+      font-family: 'Share Tech Mono', monospace; font-size: .82rem;
+      outline: none; transition: border-color .2s; width: 100%;
     }
 
     .login-input:focus {
@@ -148,43 +114,37 @@
 
     #loginError {
       display: none;
-      background: rgba(255,59,92,.08);
-      border: 1px solid var(--red-dim);
-      border-radius: 3px;
-      color: var(--red);
-      font-family: 'Share Tech Mono', monospace;
-      font-size: .72rem;
-      padding: 8px 12px;
-      margin-bottom: 14px;
+      background: rgba(255,59,92,.08); border: 1px solid var(--red-dim);
+      border-radius: 3px; color: var(--red);
+      font-family: 'Share Tech Mono', monospace; font-size: .72rem;
+      padding: 8px 12px; margin-bottom: 14px;
+    }
+
+    #lockoutBar {
+      display: none;
+      background: rgba(255,59,92,.05); border: 1px solid var(--red-dim);
+      border-radius: 3px; color: var(--text-dim);
+      font-family: 'Share Tech Mono', monospace; font-size: .65rem;
+      padding: 6px 12px; margin-bottom: 14px;
+      text-align: center; letter-spacing: .1em;
     }
 
     .btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 8px 14px;
-      font-family: 'Orbitron', monospace;
-      font-size: .62rem;
-      font-weight: 700;
-      letter-spacing: .15em;
-      cursor: pointer;
-      transition: all .2s;
+      background: transparent; border: 1px solid var(--border); border-radius: 3px;
+      padding: 8px 14px; font-family: 'Orbitron', monospace; font-size: .62rem;
+      font-weight: 700; letter-spacing: .15em; cursor: pointer; transition: all .2s;
       white-space: nowrap;
       clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
     }
 
     .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
     .btn:disabled { opacity: .4; cursor: not-allowed; }
-
     .btn-cyan { color: var(--cyan); border-color: var(--cyan-dim); }
-    .btn-cyan:hover { background: rgba(0,229,255,.08); box-shadow: var(--glow-c); border-color: var(--cyan); }
+    .btn-cyan:hover:not(:disabled) { background: rgba(0,229,255,.08); box-shadow: var(--glow-c); border-color: var(--cyan); }
 
     #loginBtn {
-      width: 100%;
-      margin-top: 6px;
-      padding: 11px;
-      font-size: .68rem;
-      letter-spacing: .2em;
+      width: 100%; margin-top: 6px; padding: 11px;
+      font-size: .68rem; letter-spacing: .2em;
     }
   </style>
 </head>
@@ -192,48 +152,122 @@
 
 <div class="login-wrap">
   <div class="login-box">
-    <div class="login-logo">◈ CAPTURES</div>
+    <div class="login-logo">&#9672; CAPTURES</div>
     <div class="login-sub">// NODE TELEMETRY DASHBOARD v4.1</div>
     <div class="login-title">AUTHENTICATE</div>
     <div class="login-sub" style="margin-bottom:24px;">// CREDENTIALS REQUIRED TO CONTINUE</div>
-    <div id="loginError" role="alert"></div>
+    <div id="loginError" role="alert" aria-live="assertive"></div>
+    <div id="lockoutBar" role="status" aria-live="polite"></div>
     <div class="login-field">
       <label class="login-label" for="loginUser">USERNAME</label>
-      <input class="login-input" id="loginUser" type="text" autocomplete="username" spellcheck="false">
+      <input class="login-input" id="loginUser" type="text"
+             autocomplete="username" spellcheck="false"
+             maxlength="64" autocapitalize="none">
     </div>
     <div class="login-field">
       <label class="login-label" for="loginPass">PASSWORD</label>
-      <input class="login-input" id="loginPass" type="password" autocomplete="current-password">
+      <input class="login-input" id="loginPass" type="password"
+             autocomplete="current-password" maxlength="128">
     </div>
-    <button class="btn btn-cyan" id="loginBtn">▶ AUTHENTICATE</button>
+    <button class="btn btn-cyan" id="loginBtn">&#9654; AUTHENTICATE</button>
   </div>
 </div>
 
 <script>
 "use strict";
 
-const WORKER_URL = "https://snowy-fog-b0d1.23amtics322.workers.dev/";
-const BASE_URL   = new URL(WORKER_URL).origin;
+// ── Constants ────────────────────────────────────────────────────────────
+const WORKER_ORIGIN = "https://snowy-fog-b0d1.23amtics322.workers.dev";
+const SAFE_REDIRECT = "dashboard.html"; // hardcoded — never dynamic/user-controlled
 
-// If already authenticated, redirect straight to dashboard
+// ── Client-side brute-force throttle ────────────────────────────────────
+// 5 attempts allowed; then progressive cooldown: 30s, 60s, 120s, 240s, 300s (cap)
+const LOCKOUT_KEY    = "cap_login_state";
+const MAX_ATTEMPTS   = 5;
+const BASE_LOCKOUT   = 30_000;
+
+function getAttemptState() {
+  try { return JSON.parse(sessionStorage.getItem(LOCKOUT_KEY)) || { count: 0, until: 0 }; }
+  catch { return { count: 0, until: 0 }; }
+}
+function saveAttemptState(s) {
+  try { sessionStorage.setItem(LOCKOUT_KEY, JSON.stringify(s)); } catch {}
+}
+function recordFailure() {
+  const s = getAttemptState();
+  s.count++;
+  if (s.count >= MAX_ATTEMPTS) {
+    const tier = Math.min(s.count - MAX_ATTEMPTS + 1, 5);
+    s.until = Date.now() + BASE_LOCKOUT * tier;
+  }
+  saveAttemptState(s);
+}
+function resetAttempts() {
+  try { sessionStorage.removeItem(LOCKOUT_KEY); } catch {}
+}
+function getLockoutRemaining() {
+  return Math.max(0, getAttemptState().until - Date.now());
+}
+
+// ── Lockout countdown UI ─────────────────────────────────────────────────
+let _countdown = null;
+
+function startLockoutCountdown() {
+  const bar = document.getElementById('lockoutBar');
+  const btn = document.getElementById('loginBtn');
+  clearInterval(_countdown);
+  btn.disabled = true;
+  bar.style.display = 'block';
+  const tick = () => {
+    const rem = getLockoutRemaining();
+    if (rem <= 0) {
+      clearInterval(_countdown);
+      bar.style.display = 'none';
+      bar.textContent = '';
+      btn.disabled = false;
+      return;
+    }
+    bar.textContent = "BLOCKED — RETRY IN " + Math.ceil(rem / 1000) + "s";
+  };
+  tick();
+  _countdown = setInterval(tick, 500);
+}
+
+// ── Session pre-check (with timeout) ────────────────────────────────────
 (async () => {
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), 5000);
   try {
-    const res = await fetch(`${BASE_URL}/auth/me`, { credentials: 'include' });
+    const res  = await fetch(WORKER_ORIGIN + "/auth/me", { credentials: 'include', signal: ctrl.signal });
+    clearTimeout(tid);
     if (res.ok) {
-      const data = await res.json();
-      if (data.authenticated) {
-        window.location.href = 'dashboard.html';
-        return;
+      const data = await res.json().catch(() => ({}));
+      if (data.authenticated === true) {
+        window.location.replace(SAFE_REDIRECT);
       }
     }
-  } catch (e) { /* not authenticated — stay on login */ }
+  } catch { clearTimeout(tid); }
 })();
 
+// Resume lockout countdown after page refresh
+document.addEventListener('DOMContentLoaded', () => {
+  if (getLockoutRemaining() > 0) startLockoutCountdown();
+});
+
+// ── Login handler ────────────────────────────────────────────────────────
 async function doLogin() {
-  const username = document.getElementById('loginUser').value.trim();
-  const password = document.getElementById('loginPass').value;
-  const errEl    = document.getElementById('loginError');
-  const btn      = document.getElementById('loginBtn');
+  const userEl = document.getElementById('loginUser');
+  const passEl = document.getElementById('loginPass');
+  const errEl  = document.getElementById('loginError');
+  const btn    = document.getElementById('loginBtn');
+
+  // Re-check lockout before doing anything
+  if (getLockoutRemaining() > 0) { startLockoutCountdown(); return; }
+
+  const username = userEl.value.trim();
+  const password = passEl.value;
+
+  errEl.style.display = 'none';
 
   if (!username || !password) {
     errEl.textContent = 'Enter username and password.';
@@ -241,38 +275,80 @@ async function doLogin() {
     return;
   }
 
+  // Length guard (mirrors maxlength attrs — defence in depth)
+  if (username.length > 64 || password.length > 128) {
+    errEl.textContent = 'Input exceeds allowed length.';
+    errEl.style.display = 'block';
+    return;
+  }
+
   btn.disabled = true;
-  btn.textContent = 'AUTHENTICATING…';
-  errEl.style.display = 'none';
+  btn.textContent = 'AUTHENTICATING\u2026';
+
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), 10_000);
 
   try {
-    const res = await fetch(`${BASE_URL}/auth/login`, {
+    const res = await fetch(WORKER_ORIGIN + "/auth/login", {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ username, password }),
+      signal: ctrl.signal
     });
-    const data = await res.json().catch(() => ({}));
+    clearTimeout(tid);
 
-    if (res.ok && data.success) {
-      document.getElementById('loginPass').value = '';
-      window.location.href = 'dashboard.html';
-    } else {
-      errEl.textContent = data.error || `Auth failed (${res.status})`;
-      errEl.style.display = 'block';
+    // Clear password from DOM immediately, regardless of outcome
+    passEl.value = '';
+
+    let data = {};
+    try { data = await res.json(); } catch {}
+
+    if (res.ok && data.success === true) {
+      resetAttempts();
+      // replace() instead of href= so login page is removed from history
+      window.location.replace(SAFE_REDIRECT);
+      return;
     }
-  } catch (e) {
-    errEl.textContent = 'Network error — ' + e.message;
+
+    // Server-side rate limit
+    if (res.status === 429) {
+      const wait = parseInt(res.headers.get('Retry-After') || '30', 10);
+      recordFailure();
+      errEl.textContent = 'Server rate limit — wait ' + wait + 's.';
+      errEl.style.display = 'block';
+      startLockoutCountdown();
+      return;
+    }
+
+    // Generic failure — intentionally vague to avoid username enumeration
+    recordFailure();
+    errEl.textContent = 'Invalid credentials.';
     errEl.style.display = 'block';
-  } finally {
+
+    if (getLockoutRemaining() > 0) {
+      startLockoutCountdown();
+    } else {
+      btn.disabled = false;
+      btn.textContent = '\u25BA AUTHENTICATE';
+    }
+    userEl.focus();
+
+  } catch (e) {
+    clearTimeout(tid);
+    passEl.value = '';
+    errEl.textContent = (e.name === 'AbortError') ? 'Request timed out.' : 'Network error.';
+    errEl.style.display = 'block';
     btn.disabled = false;
-    btn.textContent = '▶ AUTHENTICATE';
+    btn.textContent = '\u25BA AUTHENTICATE';
   }
 }
 
 document.getElementById('loginBtn').addEventListener('click', doLogin);
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+document.getElementById('loginUser').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginPass').focus();
+});
 </script>
 </body>
 </html>
