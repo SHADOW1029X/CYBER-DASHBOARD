@@ -790,14 +790,16 @@
     }
     function recordFailure(isNetworkError) {
         const s = getAttemptState();
-        // FIX #26: reset count to MAX_ATTEMPTS when lockout has expired so the
-        // tier calculation doesn't escalate unboundedly across separate sessions.
+        // FIX #26/#2: when a lockout has fully expired, reset count to 0 — not to
+        // MAX_ATTEMPTS. Resetting to MAX_ATTEMPTS meant the very next failure after
+        // expiry would immediately re-lock (count becomes MAX_ATTEMPTS+1 → tier 1).
+        // A fresh start after serving the lockout is the correct behaviour.
         if (s.until > 0 && Date.now() > s.until) {
-            s.count = MAX_ATTEMPTS; // treat post-expiry state as fresh at threshold
+            s.count = 0;
             s.until = 0;
         }
-        // FIX #25: network errors now count toward lockout so attackers can't
-        // abuse disconnect/retry to bypass the counter.
+        // Network/timeout errors count toward lockout (FIX #25) so attackers can't
+        // abuse disconnect-retry to bypass the counter.
         s.count++;
         if (s.count >= MAX_ATTEMPTS) {
             const tier = Math.min(s.count - MAX_ATTEMPTS + 1, 5);
@@ -986,15 +988,21 @@
     let _submitting = false;
 
     async function doLogin() {
+        // Guard: _submitting is only true while an actual fetch is in-flight.
+        // All early validation returns happen BEFORE _submitting is set, so
+        // there is never a path where a validation failure leaves it stuck true.
         if (_submitting) return;
+
         const userEl = document.getElementById('loginUser');
         const errEl  = document.getElementById('loginError');
         const btn    = document.getElementById('loginBtn');
         const btnTxt = document.getElementById('btnText');
 
+        // Early exits — _submitting is still false here, so no reset needed.
         if (getLockoutRemaining() > 0) { startLockoutCountdown(); return; }
 
-        // FIX #23: normalize username — lowercase + trim to prevent case inconsistencies
+        // NOTE #8: username is lowercased client-side for consistency.
+        // If your backend treats usernames as case-sensitive, remove .toLowerCase().
         const username = userEl.value.trim().toLowerCase();
         const password = passEl.value;
 
@@ -1003,14 +1011,16 @@
         if (!username || !password) {
             errEl.textContent = 'Enter username and password.';
             errEl.style.display = 'block';
-            return;
+            return; // _submitting is still false — safe
         }
         if (username.length > 64 || password.length > 128) {
             errEl.textContent = 'Input exceeds allowed length.';
             errEl.style.display = 'block';
-            return;
+            return; // _submitting is still false — safe
         }
 
+        // Only set _submitting = true immediately before the async fetch.
+        // Every code path from here on MUST either reset it or navigate away.
         _submitting  = true;
         btn.disabled = true;
         btn.classList.add('loading');
@@ -1081,8 +1091,18 @@
                 }
 
                 setTimeout(() => window.location.replace(SAFE_REDIRECT), 400);
-                // _submitting intentionally stays true — page is navigating away.
-                // If navigation somehow fails the user can refresh; no infinite lock.
+                // Safety net: if the redirect hasn't completed within 8s (e.g. the
+                // browser blocked it or navigation failed silently), unlock the form
+                // so the user can retry rather than being permanently stuck.
+                setTimeout(() => {
+                    _submitting  = false;
+                    btn.disabled = false;
+                    btn.classList.remove('loading');
+                    btnTxt.textContent    = '\u25BA\u00A0\u00A0AUTHENTICATE';
+                    btn.style.borderColor = '';
+                    btn.style.color       = '';
+                    btn.style.boxShadow   = '';
+                }, 8000);
                 return;
             }
 
@@ -1101,15 +1121,14 @@
 
             recordFailure(false);
 
-            // FIX #8/#31: shake card on failure using a CSS keyframe animation.
-            // The card previously had no @keyframes attached, so the toggle did nothing.
-            // We now add a 'shake' class that maps to cardShake, remove it after.
+            // Shake card via CSS class (cardShake keyframe defined in <style>).
             loginCard.classList.remove('shake');
-            void loginCard.offsetWidth;
+            void loginCard.offsetWidth; // force reflow so re-adding replays animation
             loginCard.classList.add('shake');
             setTimeout(() => loginCard.classList.remove('shake'), 500);
 
-            // FIX #32: remove shaking class after animation ends so it doesn't linger
+            // Remove class first, force reflow, re-add — ensures animation replays
+            // on consecutive failures (not just the first time).
             errEl.classList.remove('shaking');
             errEl.textContent   = 'Invalid credentials.';
             errEl.style.display = 'block';
