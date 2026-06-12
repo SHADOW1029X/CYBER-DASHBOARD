@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NYTHERIX // ADMIN CONTROL</title>
+  <meta name="description" content="NYTHERIX Admin Control Room — proxy management and system configuration.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://snowy-fog-b0d1.23amtics322.workers.dev; img-src data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="Referrer-Policy" content="no-referrer">
+  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23020810'/%3E%3Cpolygon points='16,2 30,9 30,23 16,30 2,23 2,9' fill='none' stroke='%2300e5ff' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' font-family='monospace' font-size='13' font-weight='bold' fill='%2300e5ff'%3E%E2%97%88%3C/text%3E%3C/svg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ══════════════════════════════════════════════════════════════
+       DESIGN TOKENS — mirrors PHOTONdashboard + NYTHERIX worker
+    ══════════════════════════════════════════════════════════════ */
+    :root {
+      --bg:         #020810;
+      --bg2:        #040d18;
+      --panel:      #07111e;
+      --panel2:     #0a1828;
+      --border:     #0d3a52;
+      --border-hi:  #1a6a8a;
+      --cyan:       #00e5ff;
+      --cyan-dim:   #007a99;
+      --cyan-deep:  #003d4d;
+      --green:      #00ff9d;
+      --green-dim:  #006644;
+      --red:        #ff3b5c;
+      --red-dim:    #7a1a2a;
+      --amber:      #ffb300;
+      --amber-dim:  #7a5500;
+      --violet:     #bf7fff;
+      --violet-dim: #5a3a88;
+      --text:       #b0d4e8;
+      --text-dim:   #3d6478;
+      --text-mid:   #6a9ab8;
+      --glow-c:  0 0 8px #00e5ff77, 0 0 24px #00e5ff33;
+      --glow-g:  0 0 8px #00ff9d77, 0 0 24px #00ff9d33;
+      --glow-r:  0 0 8px #ff3b5c77, 0 0 24px #ff3b5c33;
+      --glow-v:  0 0 8px #bf7fff77, 0 0 24px #bf7fff33;
+      --glow-a:  0 0 8px #ffb30077, 0 0 24px #ffb30033;
+    }
+
+    /* ── RESET & BASE ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: var(--cyan-dim) var(--bg2);
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg2); }
+    ::-webkit-scrollbar-thumb { background: var(--cyan-dim); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+    /* ── OVERLAYS ─────────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 3px,
+        rgba(0,229,255,.007) 3px, rgba(0,229,255,.007) 4px
+      );
+    }
+    #bg-grid {
+      position: fixed; bottom: 0; left: 50%; z-index: 0; pointer-events: none;
+      transform: translateX(-50%) rotateX(70deg);
+      transform-origin: center bottom;
+      width: 260vw; height: 160vh;
+      background-image:
+        linear-gradient(rgba(0,229,255,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,.06) 1px, transparent 1px);
+      background-size: 56px 56px;
+      opacity: .45;
+    }
+    #bg-vignette {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background: radial-gradient(ellipse 100% 100% at 50% 100%,
+        transparent 20%, rgba(2,8,16,.82) 65%, rgba(2,8,16,.99) 100%
+      );
+    }
+    #bg-glow {
+      position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+      width: 70vw; height: 2px; z-index: 1; pointer-events: none;
+      background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
+      box-shadow: 0 0 60px 20px rgba(0,229,255,.08);
+    }
+    /* Ambient violet glow — NYTHERIX's unique signature vs PHOTON */
+    #bg-violet-glow {
+      position: fixed; bottom: -200px; right: -200px;
+      width: 700px; height: 700px; border-radius: 50%; z-index: 0; pointer-events: none;
+      background: radial-gradient(circle, rgba(124,58,237,.07) 0%, transparent 60%);
+    }
+    #bg-particles { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+    .pt {
+      position: absolute; border-radius: 50%; opacity: 0;
+      animation: ptFloat linear infinite;
+    }
+    @keyframes ptFloat {
+      0%   { transform: translateY(100vh) translateX(0); opacity: 0; }
+      8%   { opacity: .5; }
+      92%  { opacity: .2; }
+      100% { transform: translateY(-20vh) translateX(var(--dx)); opacity: 0; }
+    }
+
+    /* ── LAYOUT ───────────────────────────────────────────────── */
+    .layout {
+      position: relative; z-index: 2;
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 28px 80px;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       HEADER
+    ══════════════════════════════════════════════════════════════ */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0 16px;
+      border-bottom: 1px solid transparent;
+      border-image: linear-gradient(90deg, transparent, var(--border-hi) 20%, var(--cyan-dim) 50%, var(--border-hi) 80%, transparent) 1;
+      gap: 16px; flex-wrap: nowrap;
+      position: relative;
+    }
+    header::after {
+      content: '';
+      position: absolute; bottom: -1px; left: -5%; right: -5%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      animation: headerScan 4s ease-in-out infinite;
+      opacity: .35;
+    }
+    @keyframes headerScan {
+      0%,100% { transform: scaleX(0); opacity: 0; }
+      50%      { transform: scaleX(1); opacity: .45; }
+    }
+    @media (max-width: 860px) {
+      header { flex-wrap: wrap; }
+      .header-right { gap: 6px; }
+    }
+
+    .logo-block { display: flex; flex-direction: column; gap: 3px; }
+    .logo-top {
+      font-family: 'Orbitron', monospace; font-weight: 900;
+      font-size: clamp(1.2rem, 2.8vw, 1.65rem);
+      color: var(--cyan); text-shadow: var(--glow-c);
+      letter-spacing: .18em; line-height: 1;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-sep {
+      color: var(--text-dim); font-weight: 400;
+      font-size: clamp(.9rem, 2vw, 1.1rem); letter-spacing: .05em;
+    }
+    .logo-module {
+      font-family: 'Orbitron', monospace; font-weight: 700;
+      font-size: clamp(.75rem, 1.6vw, .95rem);
+      color: var(--violet); text-shadow: var(--glow-v);
+      letter-spacing: .14em;
+    }
+    .logo-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: clamp(.55rem, 1.1vw, .65rem);
+      color: var(--text-dim); letter-spacing: .3em;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .logo-sub::before {
+      content: '';
+      display: inline-block; width: 18px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan-dim));
+    }
+    .header-right {
+      display: flex; align-items: center; gap: 9px; flex-shrink: 0;
+    }
+    .live-badge {
+      display: flex; align-items: center; gap: 7px;
+      font-family: 'Share Tech Mono', monospace; font-size: .68rem;
+      letter-spacing: .1em; border-radius: 2px; padding: 4px 10px;
+    }
+    .live-badge.proxy-live {
+      color: var(--green); background: rgba(0,255,157,.05);
+      border: 1px solid var(--green-dim);
+    }
+    .live-badge.proxy-off {
+      color: var(--text-dim); background: rgba(255,255,255,.02);
+      border: 1px solid var(--border);
+    }
+    .pulse-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 6px var(--green);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .dead-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--text-dim);
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
+
+    /* ══════════════════════════════════════════════════════════════
+       BUTTONS
+    ══════════════════════════════════════════════════════════════ */
+    .btn {
+      position: relative;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 7px 14px;
+      font-family: 'Orbitron', monospace;
+      font-size: .58rem; font-weight: 700;
+      letter-spacing: .14em; cursor: pointer;
+      transition: all .2s ease; white-space: nowrap;
+      clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+      overflow: hidden;
+    }
+    .btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+      transform: translateX(-100%);
+      transition: transform .3s ease;
+    }
+    .btn:hover::before { transform: translateX(100%); }
+    .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+    .btn:disabled { opacity: .35; cursor: not-allowed; }
+
+    .btn-cyan   { color: var(--cyan);   border-color: var(--cyan-dim); }
+    .btn-cyan:hover:not(:disabled)   { background: rgba(0,229,255,.08);   box-shadow: var(--glow-c);   border-color: var(--cyan); }
+    .btn-green  { color: var(--green);  border-color: var(--green-dim); }
+    .btn-green:hover:not(:disabled)  { background: rgba(0,255,157,.08);  box-shadow: var(--glow-g);  border-color: var(--green); }
+    .btn-red    { color: var(--red);    border-color: var(--red-dim); }
+    .btn-red:hover:not(:disabled)    { background: rgba(255,59,92,.08);   box-shadow: var(--glow-r);   border-color: var(--red); }
+    .btn-amber  { color: var(--amber);  border-color: var(--amber-dim); }
+    .btn-amber:hover:not(:disabled)  { background: rgba(255,179,0,.08);  box-shadow: var(--glow-a);  border-color: var(--amber); }
+    .btn-violet { color: var(--violet); border-color: var(--violet-dim); }
+    .btn-violet:hover:not(:disabled) { background: rgba(191,127,255,.08); box-shadow: var(--glow-v); border-color: var(--violet); }
+    .btn-sm { padding: 5px 10px; font-size: .52rem; }
+    .hdr-btn { padding: 6px 12px; font-size: .55rem; letter-spacing: .12em; }
+
+    /* ── TOGGLE SWITCH ────────────────────────────────────────── */
+    .sw-wrap {
+      display: flex; align-items: center; gap: 13px;
+    }
+    .sw { position: relative; width: 52px; height: 28px; flex-shrink: 0; }
+    .sw input { opacity: 0; width: 0; height: 0; }
+    .sl {
+      position: absolute; inset: 0;
+      background: var(--panel2); border: 1px solid var(--border);
+      border-radius: 28px; cursor: pointer;
+      transition: background .22s, border-color .22s;
+    }
+    .sl::before {
+      content: ''; position: absolute;
+      left: 4px; top: 4px; width: 18px; height: 18px;
+      border-radius: 50%; background: var(--text-dim);
+      transition: transform .22s, background .22s;
+    }
+    .sw input:checked + .sl { background: rgba(0,255,157,.1); border-color: var(--green-dim); }
+    .sw input:checked + .sl::before { transform: translateX(24px); background: var(--green); box-shadow: 0 0 9px rgba(0,255,157,.5); }
+    .sw-label {
+      font-family: 'Share Tech Mono', monospace; font-size: .72rem;
+      color: var(--text-mid);
+    }
+    .sw-label strong { color: var(--text); font-family: 'Orbitron', monospace; font-size: .64rem; letter-spacing: .08em; }
+
+    /* ══════════════════════════════════════════════════════════════
+       NAV TABS
+    ══════════════════════════════════════════════════════════════ */
+    .nav-tabs {
+      display: flex; gap: 2px; margin: 22px 0 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap; position: relative;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent; border-bottom: none;
+      padding: 9px 22px;
+      font-family: 'Orbitron', monospace; font-size: .58rem; font-weight: 700;
+      letter-spacing: .16em; color: var(--text-dim);
+      cursor: pointer; border-radius: 3px 3px 0 0;
+      transition: all .2s; position: relative; bottom: -1px;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    }
+    .tab-btn:hover { color: var(--cyan); background: rgba(0,229,255,.04); }
+    .tab-btn.active {
+      color: var(--cyan); border-color: var(--border-hi); border-bottom-color: var(--bg);
+      background: var(--panel); text-shadow: var(--glow-c);
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute; bottom: 0; left: 10%; right: 10%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      box-shadow: 0 0 8px var(--cyan);
+    }
+    .tab-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+    .tab-panel { display: none; padding-top: 24px; }
+    .tab-panel.active { display: block; }
+
+    /* ══════════════════════════════════════════════════════════════
+       STAT CARDS
+    ══════════════════════════════════════════════════════════════ */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px; margin-bottom: 22px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, var(--panel2) 0%, rgba(4,13,24,.8) 100%);
+      border: 1px solid var(--border);
+      border-radius: 3px; padding: 16px 18px;
+      position: relative; overflow: hidden;
+      clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+      transition: border-color .25s, transform .2s;
+    }
+    .stat-card:hover { border-color: var(--border-hi); transform: translateY(-2px); }
+    .stat-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
+      opacity: .7;
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute; top: -1px; right: -1px;
+      width: 20px; height: 20px;
+      background: var(--cyan-dim);
+      clip-path: polygon(0 0, 100% 100%, 100% 0);
+      opacity: .3;
+    }
+    .stat-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .55rem; color: var(--text-dim);
+      letter-spacing: .22em; text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .stat-value {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.2rem, 2.2vw, 1.55rem); font-weight: 700;
+      color: var(--cyan); text-shadow: var(--glow-c);
+      line-height: 1; transition: transform .2s;
+    }
+    .stat-card:hover .stat-value { transform: scale(1.04); }
+    .stat-value.green  { color: var(--green);  text-shadow: var(--glow-g); }
+    .stat-value.amber  { color: var(--amber);  text-shadow: var(--glow-a); }
+    .stat-value.violet { color: var(--violet); text-shadow: var(--glow-v); }
+    .stat-value.red    { color: var(--red);    text-shadow: var(--glow-r); }
+    .stat-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .57rem; color: var(--text-dim);
+      margin-top: 6px; letter-spacing: .1em;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       PANELS / CARDS
+    ══════════════════════════════════════════════════════════════ */
+    .panel {
+      background: linear-gradient(135deg, var(--panel2) 0%, rgba(4,13,24,.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 3px; padding: 22px;
+      margin-bottom: 14px; position: relative; overflow: hidden;
+    }
+    .panel::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
+      opacity: .6;
+    }
+    .panel.panel-violet::before {
+      background: linear-gradient(90deg, transparent, var(--violet-dim), transparent);
+    }
+    .panel.panel-amber::before {
+      background: linear-gradient(90deg, transparent, var(--amber-dim), transparent);
+    }
+    .panel.panel-green::before {
+      background: linear-gradient(90deg, transparent, var(--green-dim), transparent);
+    }
+    .panel.panel-red::before {
+      background: linear-gradient(90deg, transparent, var(--red-dim), transparent);
+    }
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 18px; gap: 12px; flex-wrap: wrap;
+    }
+    .panel-title {
+      font-family: 'Orbitron', monospace; font-size: .65rem; font-weight: 700;
+      letter-spacing: .2em; color: var(--cyan);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .panel-title.violet { color: var(--violet); }
+    .panel-title.amber  { color: var(--amber); }
+    .panel-title.green  { color: var(--green); }
+    .panel-title::before {
+      content: '';
+      width: 3px; height: 12px; border-radius: 2px; flex-shrink: 0;
+      background: var(--cyan); box-shadow: 0 0 6px var(--cyan);
+    }
+    .panel-title.violet::before { background: var(--violet); box-shadow: 0 0 6px var(--violet); }
+    .panel-title.amber::before  { background: var(--amber);  box-shadow: 0 0 6px var(--amber); }
+    .panel-title.green::before  { background: var(--green);  box-shadow: 0 0 6px var(--green); }
+
+    /* ── FORM FIELDS ──────────────────────────────────────────── */
+    .field-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .field-group:last-child { margin-bottom: 0; }
+    .field-label {
+      font-family: 'Share Tech Mono', monospace; font-size: .6rem;
+      color: var(--cyan-dim); letter-spacing: .16em; text-transform: uppercase;
+    }
+    .field-input, .field-textarea, .field-select {
+      background: rgba(2,8,16,.9); border: 1px solid var(--border);
+      border-radius: 2px; padding: 9px 12px; color: var(--text);
+      font-family: 'Share Tech Mono', monospace; font-size: .78rem;
+      outline: none; transition: border-color .2s, box-shadow .2s; width: 100%;
+      caret-color: var(--cyan);
+    }
+    .field-input:focus, .field-textarea:focus, .field-select:focus {
+      border-color: var(--cyan-dim); box-shadow: 0 0 0 2px rgba(0,229,255,.08);
+    }
+    .field-input::placeholder, .field-textarea::placeholder { color: var(--text-dim); }
+    .field-textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+    .field-hint {
+      font-family: 'Share Tech Mono', monospace; font-size: .58rem;
+      color: var(--text-dim); line-height: 1.6; letter-spacing: .04em;
+    }
+    .field-hint a { color: var(--cyan); text-decoration: none; border-bottom: 1px dotted var(--cyan-dim); }
+    .field-hint a:hover { color: var(--green); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+    /* ── PROXY CONTROL ROW ────────────────────────────────────── */
+    .proxy-control-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      background: rgba(2,8,16,.6); border: 1px solid var(--border);
+      border-radius: 3px; gap: 16px; flex-wrap: wrap;
+    }
+    .proxy-status-info { display: flex; flex-direction: column; gap: 4px; }
+    .proxy-status-label {
+      font-family: 'Orbitron', monospace; font-size: .7rem; font-weight: 700;
+      letter-spacing: .14em; color: var(--text);
+    }
+    .proxy-status-desc {
+      font-family: 'Share Tech Mono', monospace; font-size: .62rem;
+      color: var(--text-dim); line-height: 1.5;
+    }
+
+    /* ── STATUS BADGE ─────────────────────────────────────────── */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'Share Tech Mono', monospace; font-size: .65rem;
+      letter-spacing: .1em; padding: 4px 12px;
+      border-radius: 2px;
+      clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    }
+    .status-badge.live { color: var(--green); background: rgba(0,255,157,.06); border: 1px solid var(--green-dim); }
+    .status-badge.off  { color: var(--text-dim); background: rgba(255,255,255,.02); border: 1px solid var(--border); }
+
+    /* ── INFO GRID ────────────────────────────────────────────── */
+    .info-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+    }
+    .info-cell {
+      background: rgba(2,8,16,.7); border: 1px solid var(--border);
+      border-radius: 2px; padding: 12px 14px;
+    }
+    .info-cell-label {
+      font-family: 'Share Tech Mono', monospace; font-size: .54rem;
+      color: var(--text-dim); letter-spacing: .2em; text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .info-cell-value {
+      font-family: 'Share Tech Mono', monospace; font-size: .72rem;
+      color: var(--text); word-break: break-all; line-height: 1.4;
+    }
+    .info-cell-value.cyan   { color: var(--cyan); }
+    .info-cell-value.green  { color: var(--green); }
+    .info-cell-value.amber  { color: var(--amber); }
+    .info-cell-value.violet { color: var(--violet); }
+
+    /* ── SESSION TABLE ────────────────────────────────────────── */
+    .session-table-wrap {
+      border: 1px solid var(--border); border-radius: 2px;
+      overflow: auto; background: rgba(2,8,16,.7);
+    }
+    .session-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+    .session-table thead { position: sticky; top: 0; z-index: 5; }
+    .session-table th {
+      background: linear-gradient(180deg, #061624 0%, #040e1a 100%);
+      color: var(--cyan);
+      font-family: 'Orbitron', monospace; font-size: .52rem; font-weight: 700;
+      letter-spacing: .14em; padding: 10px 12px;
+      text-align: left; white-space: nowrap;
+      border-bottom: 1px solid var(--cyan-dim);
+    }
+    .session-table td {
+      padding: 9px 12px;
+      font-family: 'Share Tech Mono', monospace; font-size: .7rem;
+      border-bottom: 1px solid rgba(13,58,82,.4);
+      color: var(--text);
+    }
+    .session-table tr:hover td { background: rgba(0,229,255,.04); }
+    .session-table tr:last-child td { border-bottom: none; }
+
+    /* ── LOG VIEWER ───────────────────────────────────────────── */
+    .log-wrap {
+      background: rgba(2,8,16,.95); border: 1px solid var(--border);
+      border-radius: 2px; padding: 14px; font-family: 'Share Tech Mono', monospace;
+      font-size: .72rem; line-height: 1.7; color: var(--text-mid);
+      max-height: 280px; overflow-y: auto;
+    }
+    .log-line { display: flex; gap: 12px; }
+    .log-time  { color: var(--text-dim); flex-shrink: 0; }
+    .log-level { flex-shrink: 0; width: 44px; text-align: center; }
+    .log-level.ok   { color: var(--green); }
+    .log-level.warn { color: var(--amber); }
+    .log-level.err  { color: var(--red); }
+    .log-level.info { color: var(--cyan); }
+    .log-msg { flex: 1; word-break: break-all; }
+
+    /* ── ALERT / MESSAGE BAR ──────────────────────────────────── */
+    .alert-bar {
+      display: none;
+      border-radius: 2px;
+      font-family: 'Share Tech Mono', monospace; font-size: .72rem;
+      padding: 10px 14px; margin-bottom: 16px; line-height: 1.6;
+    }
+    .alert-bar.show { display: block; }
+    .alert-bar.ok  { background: rgba(0,255,157,.06); border: 1px solid var(--green-dim); border-left: 3px solid var(--green); color: var(--green); }
+    .alert-bar.err { background: rgba(255,59,92,.06);  border: 1px solid var(--red-dim);  border-left: 3px solid var(--red);   color: var(--red); }
+    .alert-bar.info { background: rgba(0,229,255,.05); border: 1px solid var(--cyan-dim); border-left: 3px solid var(--cyan);  color: var(--cyan); }
+
+    /* ── MODAL ────────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 8000;
+      background: rgba(0,0,0,.85); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: linear-gradient(145deg, var(--panel2), var(--bg2));
+      border: 1px solid var(--border-hi);
+      border-radius: 3px;
+      width: min(520px, 95vw); max-height: 90vh; overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: 0 30px 80px rgba(0,0,0,.9), var(--glow-c), inset 0 1px 0 rgba(0,229,255,.1);
+      animation: modalIn .22s cubic-bezier(.16,1,.3,1);
+      clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+    }
+    .modal.modal-danger {
+      border-color: var(--red-dim);
+      box-shadow: 0 30px 80px rgba(0,0,0,.9), var(--glow-r), inset 0 1px 0 rgba(255,59,92,.1);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(-14px) scale(.97); }
+      to   { opacity: 1; transform: none; }
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 15px 20px; border-bottom: 1px solid var(--border);
+      background: rgba(4,13,24,.7); flex-shrink: 0; position: relative;
+    }
+    .modal-header::after {
+      content: '';
+      position: absolute; bottom: 0; left: 5%; right: 5%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
+    }
+    .modal-title {
+      font-family: 'Orbitron', monospace; font-size: .72rem; font-weight: 700;
+      letter-spacing: .14em; color: var(--cyan); text-shadow: var(--glow-c);
+    }
+    .modal-close {
+      background: transparent; border: 1px solid transparent;
+      border-radius: 2px; color: var(--text-dim);
+      font-size: 1rem; cursor: pointer;
+      padding: 2px 7px; transition: all .15s; line-height: 1;
+    }
+    .modal-close:hover { color: var(--red); border-color: var(--red-dim); background: rgba(255,59,92,.06); }
+    .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+    .modal-footer {
+      padding: 13px 20px; border-top: 1px solid var(--border);
+      display: flex; gap: 9px; justify-content: flex-end; flex-shrink: 0;
+      background: rgba(4,13,24,.5); flex-wrap: wrap;
+    }
+
+    /* ── TOASTS ───────────────────────────────────────────────── */
+    .toast-stack {
+      position: fixed; bottom: 22px; right: 22px; z-index: 9500;
+      display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      background: var(--panel2); border-radius: 2px;
+      padding: 10px 18px; font-family: 'Share Tech Mono', monospace; font-size: .7rem;
+      box-shadow: 0 6px 30px rgba(0,0,0,.8); animation: toastIn .25s ease;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .toast.out { animation: toastOut .25s ease forwards; }
+    @keyframes toastIn  { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:none} }
+    @keyframes toastOut { to{opacity:0;transform:translateX(24px)} }
+    .t-green  { border: 1px solid var(--green);  border-left: 3px solid var(--green);  color: var(--green); }
+    .t-red    { border: 1px solid var(--red);    border-left: 3px solid var(--red);    color: var(--red); }
+    .t-cyan   { border: 1px solid var(--cyan);   border-left: 3px solid var(--cyan);   color: var(--cyan); }
+    .t-amber  { border: 1px solid var(--amber);  border-left: 3px solid var(--amber);  color: var(--amber); }
+    .t-violet { border: 1px solid var(--violet); border-left: 3px solid var(--violet); color: var(--violet); }
+
+    /* ── LOADER SPINNER ───────────────────────────────────────── */
+    .loader {
+      display: none; width: 16px; height: 16px;
+      border: 1.5px solid rgba(0,229,255,.2);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      flex-shrink: 0;
+    }
+    .loader.active { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── DIVIDER ──────────────────────────────────────────────── */
+    .divider {
+      border: none; border-top: 1px solid var(--border);
+      margin: 18px 0;
+      background: none;
+    }
+
+    /* ── DANGER ZONE ──────────────────────────────────────────── */
+    .danger-zone {
+      border: 1px solid var(--red-dim);
+      border-radius: 3px; padding: 20px; position: relative;
+    }
+    .danger-zone::before {
+      content: '⚠ DANGER ZONE';
+      position: absolute; top: -9px; left: 16px;
+      font-family: 'Orbitron', monospace; font-size: .5rem;
+      letter-spacing: .2em; color: var(--red);
+      background: var(--panel2); padding: 0 8px;
+    }
+    .danger-zone-desc {
+      font-family: 'Share Tech Mono', monospace; font-size: .68rem;
+      color: var(--text-dim); line-height: 1.7; margin-bottom: 14px;
+    }
+
+    /* ── RESPONSIVE ───────────────────────────────────────────── */
+    @media (max-width: 700px) {
+      .stats-row { grid-template-columns: repeat(2,1fr); }
+      .info-grid  { grid-template-columns: 1fr; }
+      #bg-grid    { display: none; }
+    }
+    @media (max-width: 480px) {
+      .layout { padding: 0 14px 60px; }
+      .panel  { padding: 16px 14px; }
+    }
+
+    /* ── AUTH GATE ────────────────────────────────────────────── */
+    #auth-gate {
+      position: fixed; inset: 0; z-index: 7000;
+      background: rgba(2,8,16,.97);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #auth-gate.hide { display: none; }
+    .auth-gate-box {
+      text-align: center;
+      font-family: 'Orbitron', monospace; font-size: .7rem;
+      letter-spacing: .14em; color: var(--text-dim);
+    }
+    .auth-gate-box .ag-logo {
+      font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 900;
+      color: var(--cyan); text-shadow: var(--glow-c);
+      letter-spacing: .2em; margin-bottom: 14px;
+    }
+    .auth-gate-box .ag-spinner {
+      width: 28px; height: 28px; margin: 18px auto 0;
+      border: 2px solid rgba(0,229,255,.15);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Auth verification gate — shown while session check is in flight -->
+<div id="auth-gate">
+  <div class="auth-gate-box">
+    <div class="ag-logo">NYTHERIX</div>
+    <div>VERIFYING SESSION…</div>
+    <div class="ag-spinner"></div>
+  </div>
+</div>
+
+<!-- Background layers -->
+<div id="bg-grid"></div>
+<div id="bg-vignette"></div>
+<div id="bg-glow"></div>
+<div id="bg-violet-glow"></div>
+<div id="bg-particles"></div>
+
+<div class="layout">
+
+  <!-- ══════════════════════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════════════════════ -->
+  <header>
+    <div class="logo-block">
+      <div class="logo-top">
+        NYTHERIX
+        <span class="logo-sep">//</span>
+        <span class="logo-module">ADMIN</span>
+      </div>
+      <div class="logo-sub">Control Room · Proxy Management</div>
+    </div>
+    <div class="header-right">
+      <div id="proxyBadgeHdr" class="live-badge proxy-off">
+        <span class="dead-dot" id="hdBadgeDot"></span>
+        <span id="hdBadgeLbl">CHECKING…</span>
+      </div>
+      <div class="loader active" id="hdrLoader"></div>
+      <a href="PHOTONdashboard.html" class="btn btn-cyan hdr-btn">◈ CAPTURES</a>
+      <button class="btn btn-violet hdr-btn" id="changePassBtn">🔑 PASSWORD</button>
+      <button class="btn btn-red hdr-btn" id="logoutBtn">⏻ LOGOUT</button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════
+       STATS ROW
+  ══════════════════════════════════════════════════════════ -->
+  <div class="stats-row" style="margin-top:22px" id="statsRow">
+    <div class="stat-card">
+      <div class="stat-label">Proxy Status</div>
+      <div class="stat-value" id="statProxyStatus" style="font-size:.9rem;letter-spacing:.05em">—</div>
+      <div class="stat-sub" id="statProxySub">loading…</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Target URL</div>
+      <div class="stat-value violet" style="font-size:.65rem;letter-spacing:0;word-break:break-all;line-height:1.3" id="statTarget">—</div>
+      <div class="stat-sub">destination host</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">D1 Database</div>
+      <div class="stat-value cyan" style="font-size:.75rem;letter-spacing:.05em">nytherix_db</div>
+      <div class="stat-sub">binding: DB</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Session</div>
+      <div class="stat-value green" style="font-size:.75rem;letter-spacing:.05em">ACTIVE</div>
+      <div class="stat-sub" id="statSessionSub">8h TTL</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       TABS
+  ══════════════════════════════════════════════════════════ -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" data-tab="proxy">◈ PROXY CONTROL</button>
+    <button class="tab-btn" data-tab="system">⬡ SYSTEM INFO</button>
+    <button class="tab-btn" data-tab="sessions">⌇ SESSIONS</button>
+    <button class="tab-btn" data-tab="log">▦ ACTIVITY LOG</button>
+  </div>
+
+  <!-- ═══════════════════ TAB: PROXY CONTROL ═══════════════════ -->
+  <div class="tab-panel active" id="tab-proxy">
+
+    <div id="proxyAlert" class="alert-bar"></div>
+
+    <!-- Proxy ON/OFF toggle -->
+    <div class="panel panel-green">
+      <div class="panel-header">
+        <div class="panel-title green">Proxy Playback</div>
+        <div id="proxyStatusBadge" class="status-badge off">
+          <span class="dead-dot" id="pBadgeDot"></span>
+          <span id="pBadgeLbl">OFFLINE</span>
+        </div>
+      </div>
+      <div class="proxy-control-row">
+        <div class="proxy-status-info">
+          <div class="proxy-status-label">Site Proxy</div>
+          <div class="proxy-status-desc">Toggle proxy on / off for all incoming visitors.<br>When live, all traffic is forwarded to the target URL.</div>
+        </div>
+        <label class="sw-wrap">
+          <label class="sw">
+            <input type="checkbox" id="proxyToggle">
+            <span class="sl"></span>
+          </label>
+          <div class="sw-label">
+            <strong id="swLabel">OFFLINE</strong><br>
+            click to toggle
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Target URL -->
+    <div class="panel panel-violet">
+      <div class="panel-header">
+        <div class="panel-title violet">Target URL</div>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="targetUrl">Destination</label>
+        <input class="field-input" type="url" id="targetUrl"
+          placeholder="https://original-website.com"
+          autocomplete="off" spellcheck="false">
+        <div class="field-hint">
+          The real site visitors will be proxied to. HTTP/HTTPS prefix is added automatically if omitted.
+        </div>
+      </div>
+      <button class="btn btn-violet" id="saveSettingsBtn" style="margin-top:14px">
+        Apply Settings →
+      </button>
+    </div>
+
+  </div><!-- /tab-proxy -->
+
+  <!-- ═══════════════════ TAB: SYSTEM INFO ═══════════════════ -->
+  <div class="tab-panel" id="tab-system">
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Database &amp; Binding</div>
+      </div>
+      <div class="info-grid">
+        <div class="info-cell">
+          <div class="info-cell-label">D1 Database</div>
+          <div class="info-cell-value cyan">nytherix_db</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">DB Binding</div>
+          <div class="info-cell-value cyan">DB</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">Session Cookie</div>
+          <div class="info-cell-value">nx_sess</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">Session TTL</div>
+          <div class="info-cell-value">8 hours</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">Password Hash</div>
+          <div class="info-cell-value">SHA-256 + SALT</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">Tables</div>
+          <div class="info-cell-value" style="font-size:.62rem;line-height:1.7">
+            settings · admin_sessions · admin_config
+          </div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">Proxy Status</div>
+          <div class="info-cell-value" id="sysProxyStatus">—</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">Current Target</div>
+          <div class="info-cell-value" id="sysTargetUrl" style="word-break:break-all;font-size:.64rem">— not set —</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel-amber">
+      <div class="panel-header">
+        <div class="panel-title amber">Worker Routes</div>
+      </div>
+      <div class="info-grid">
+        <div class="info-cell">
+          <div class="info-cell-label">GET /login</div>
+          <div class="info-cell-value">Login page</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">POST /login</div>
+          <div class="info-cell-value">Authenticate</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">GET/POST /setup</div>
+          <div class="info-cell-value">First-run setup</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">GET /</div>
+          <div class="info-cell-value">Dashboard (auth required)</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">POST /save</div>
+          <div class="info-cell-value">Save proxy settings</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">GET|POST /change-password</div>
+          <div class="info-cell-value">Change admin password</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">GET /logout</div>
+          <div class="info-cell-value">Destroy session</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">Worker Endpoint</div>
+          <div class="info-cell-value cyan" id="sysWorkerUrl" style="font-size:.62rem;word-break:break-all">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-system -->
+
+  <!-- ═══════════════════ TAB: SESSIONS ═══════════════════════ -->
+  <div class="tab-panel" id="tab-sessions">
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Active Admin Sessions</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="loader" id="sessLoader"></div>
+          <button class="btn btn-cyan btn-sm" id="refreshSessionsBtn">⟳ Refresh</button>
+        </div>
+      </div>
+      <div id="sessAlert" class="alert-bar" style="margin-bottom:14px"></div>
+      <div class="session-table-wrap">
+        <table class="session-table">
+          <thead>
+            <tr>
+              <th>Token (prefix)</th>
+              <th>Expires At</th>
+              <th>Time Remaining</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="sessTableBody">
+            <tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:28px;font-family:'Share Tech Mono',monospace;font-size:.7rem;">// session data requires direct DB access via worker endpoint</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:16px">
+        <div class="danger-zone">
+          <div class="danger-zone-desc">
+            Force-logout all sessions by deleting all rows from <span style="color:var(--amber)">admin_sessions</span> via the worker's /logout endpoint.
+            All currently logged-in admin devices will be invalidated.
+          </div>
+          <button class="btn btn-red btn-sm" id="nukeSessionsBtn">✕ Invalidate All Sessions</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-sessions -->
+
+  <!-- ═══════════════════ TAB: ACTIVITY LOG ════════════════════ -->
+  <div class="tab-panel" id="tab-log">
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Activity Log</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-cyan btn-sm" id="clearLogBtn">✕ Clear</button>
+        </div>
+      </div>
+      <div class="log-wrap" id="logWrap">
+        <div class="log-line">
+          <span class="log-time" id="logInitTime">--:--:--</span>
+          <span class="log-level info">INFO</span>
+          <span class="log-msg">NYTHERIX Admin dashboard initialised.</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-log -->
+
+</div><!-- /.layout -->
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL: Change Password
+══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="changePassModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🔑 Change Password</div>
+      <button class="modal-close" data-close="changePassModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="cpAlert" class="alert-bar" style="margin-bottom:14px"></div>
+      <div class="field-group">
+        <label class="field-label" for="cpCurrent">Current Password</label>
+        <input class="field-input" type="password" id="cpCurrent" placeholder="Current password" autocomplete="current-password">
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="cpNew">New Password</label>
+        <input class="field-input" type="password" id="cpNew" placeholder="New password (min 6 chars)" autocomplete="new-password">
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="cpConfirm">Confirm New Password</label>
+        <input class="field-input" type="password" id="cpConfirm" placeholder="Repeat new password" autocomplete="new-password">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cyan" id="cpCancelBtn">Cancel</button>
+      <button class="btn btn-violet" id="cpSaveBtn">Update Password →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL: Confirm Invalidate Sessions
+══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="nukeModal">
+  <div class="modal modal-danger modal-sm">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--red)">⚠ Invalidate All Sessions</div>
+      <button class="modal-close" data-close="nukeModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center;padding:10px 0">
+        <div style="font-size:2.4rem;margin-bottom:14px">⛔</div>
+        <p style="font-family:'Share Tech Mono',monospace;font-size:.74rem;color:var(--text);line-height:1.8">
+          This will call <span style="color:var(--amber)">/logout</span> and destroy your current session.
+          All admin devices will need to re-authenticate.<br><br>
+          <strong style="color:var(--red)">You will be redirected to the login page.</strong>
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cyan" data-close="nukeModal">Cancel</button>
+      <button class="btn btn-red" id="nukeConfirmBtn">✕ Invalidate &amp; Logout</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast stack -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+'use strict';
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+// Worker URL: the NYTHERIX-ADMIN Cloudflare Worker base URL.
+// This page talks to the worker's form-based endpoints via fetch with cookies.
+// For the form-POST routes (POST /save, POST /change-password, POST /login,
+// GET /logout) we hit the worker directly via its public URL.
+const WORKER_ORIGIN = 'https://snowy-fog-b0d1.23amtics322.workers.dev'; // ← Update if needed
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentSettings = { target_url: '', enabled: 0 };
+let logEntries      = [];
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function fmtTime() {
+  return new Date().toTimeString().slice(0,8);
+}
+
+function fmtTimestamp(unixSec) {
+  if (!unixSec) return '—';
+  return new Date(unixSec * 1000).toLocaleString();
+}
+
+function timeRemaining(expiresAt) {
+  const diff = expiresAt - Math.floor(Date.now() / 1000);
+  if (diff <= 0) return 'Expired';
+  const h = Math.floor(diff / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  const s = diff % 60;
+  return `${h}h ${m}m ${s}s`;
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, cls = 't-cyan', dur = 3500) {
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div');
+  el.className = `toast ${cls}`;
+  el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+  }, dur);
+}
+
+// ── ACTIVITY LOG ──────────────────────────────────────────────────────────────
+function addLog(msg, level = 'info') {
+  const wrap = document.getElementById('logWrap');
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">${fmtTime()}</span><span class="log-level ${level}">${level.toUpperCase()}</span><span class="log-msg">${esc(msg)}</span>`;
+  wrap.appendChild(line);
+  wrap.scrollTop = wrap.scrollHeight;
+  logEntries.push({ time: fmtTime(), level, msg });
+}
+
+// ── MODAL HELPERS ─────────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.addEventListener('click', () => closeModal(btn.dataset.close));
+});
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeModal(overlay.id);
+  });
+});
+
+// ── ALERT BARS ────────────────────────────────────────────────────────────────
+function showAlert(id, msg, type = 'ok') {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = `alert-bar show ${type}`;
+  if (type === 'ok') setTimeout(() => { el.className = 'alert-bar'; }, 5000);
+}
+function hideAlert(id) {
+  document.getElementById(id).className = 'alert-bar';
+}
+
+// ── PROXY STATE UI ────────────────────────────────────────────────────────────
+function applyProxyState(enabled, targetUrl) {
+  const on = !!enabled;
+
+  // Header badge
+  const hdBadge = document.getElementById('proxyBadgeHdr');
+  const hdDot   = document.getElementById('hdBadgeDot');
+  const hdLbl   = document.getElementById('hdBadgeLbl');
+  if (on) {
+    hdBadge.className = 'live-badge proxy-live';
+    hdDot.className   = 'pulse-dot';
+    hdLbl.textContent = 'PROXY LIVE';
+  } else {
+    hdBadge.className = 'live-badge proxy-off';
+    hdDot.className   = 'dead-dot';
+    hdLbl.textContent = 'PROXY OFFLINE';
+  }
+
+  // Tab badge
+  const pBadge = document.getElementById('proxyStatusBadge');
+  const pDot   = document.getElementById('pBadgeDot');
+  const pLbl   = document.getElementById('pBadgeLbl');
+  if (on) {
+    pBadge.className = 'status-badge live';
+    pDot.className   = 'pulse-dot';
+    pLbl.textContent = 'LIVE';
+  } else {
+    pBadge.className = 'status-badge off';
+    pDot.className   = 'dead-dot';
+    pLbl.textContent = 'OFFLINE';
+  }
+
+  // Toggle & label
+  const tog = document.getElementById('proxyToggle');
+  tog.checked = on;
+  document.getElementById('swLabel').textContent = on ? 'LIVE' : 'OFFLINE';
+
+  // Target input
+  document.getElementById('targetUrl').value = targetUrl || '';
+
+  // Stats row
+  const sv = document.getElementById('statProxyStatus');
+  sv.textContent = on ? 'LIVE' : 'OFFLINE';
+  sv.className   = on ? 'stat-value green' : 'stat-value red';
+  document.getElementById('statProxySub').textContent = on ? 'proxying traffic' : 'all traffic blocked';
+  document.getElementById('statTarget').textContent   = targetUrl || '— not configured —';
+
+  // System tab
+  document.getElementById('sysProxyStatus').textContent = on ? '🟢 Live' : '⚫ Offline';
+  document.getElementById('sysProxyStatus').style.color = on ? 'var(--green)' : 'var(--text-dim)';
+  document.getElementById('sysTargetUrl').textContent   = targetUrl || '— not set —';
+  document.getElementById('sysWorkerUrl').textContent   = WORKER_ORIGIN;
+}
+
+// ── LOAD SETTINGS FROM WORKER ─────────────────────────────────────────────────
+// The NYTHERIX worker serves its dashboard at GET / (auth-gated).
+// We parse the returned HTML to extract current settings, then update our UI.
+// This avoids needing a separate JSON API endpoint on the worker.
+async function loadSettings() {
+  document.getElementById('hdrLoader').classList.add('active');
+  try {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 10_000);
+    const res  = await fetch(WORKER_ORIGIN + '/', {
+      credentials: 'include', signal: ctrl.signal
+    });
+    clearTimeout(tid);
+
+    if (res.status === 302 || res.redirected) {
+      // Worker redirected us — session not valid for worker; we still show cached/default state
+      addLog('Worker session not active — displaying defaults.', 'warn');
+      applyProxyState(0, '');
+      return;
+    }
+
+    const html = await res.text();
+
+    // Extract toggle state: input type="checkbox" name="enabled" ... checked
+    const enabledMatch = html.match(/name="enabled"[^>]*?(checked)/i);
+    const enabled = !!enabledMatch;
+
+    // Extract target_url from value="..."
+    const urlMatch = html.match(/name="target_url"[^>]*?value="([^"]*)"/i);
+    const targetUrl = urlMatch ? urlMatch[1] : '';
+
+    currentSettings = { target_url: targetUrl, enabled: enabled ? 1 : 0 };
+    applyProxyState(currentSettings.enabled, currentSettings.target_url);
+    addLog(`Settings loaded — proxy: ${enabled ? 'LIVE' : 'OFFLINE'}, target: ${targetUrl || '(none)'}`, 'ok');
+  } catch (e) {
+    addLog(`Failed to load settings: ${e.message}`, 'err');
+    applyProxyState(0, '');
+  } finally {
+    document.getElementById('hdrLoader').classList.remove('active');
+  }
+}
+
+// ── SAVE SETTINGS VIA WORKER ──────────────────────────────────────────────────
+async function saveSettings() {
+  const btn       = document.getElementById('saveSettingsBtn');
+  const togOn     = document.getElementById('proxyToggle').checked;
+  const targetVal = document.getElementById('targetUrl').value.trim();
+
+  btn.disabled = true;
+  btn.textContent = 'Applying…';
+  hideAlert('proxyAlert');
+
+  const fd = new FormData();
+  fd.set('target_url', targetVal);
+  if (togOn) fd.set('enabled', 'on');
+
+  try {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 10_000);
+    const res  = await fetch(WORKER_ORIGIN + '/save', {
+      method: 'POST', credentials: 'include', body: fd, signal: ctrl.signal
+    });
+    clearTimeout(tid);
+    const text = await res.text();
+
+    if (res.ok && !text.includes('alert err')) {
+      currentSettings = { target_url: targetVal, enabled: togOn ? 1 : 0 };
+      applyProxyState(currentSettings.enabled, currentSettings.target_url);
+      showAlert('proxyAlert', '✅ Settings saved successfully.', 'ok');
+      toast('✓ Settings saved', 't-green');
+      addLog(`Settings saved — proxy: ${togOn ? 'LIVE' : 'OFFLINE'}, target: ${targetVal || '(none)'}`, 'ok');
+    } else {
+      // Extract flash error from returned HTML
+      const errMatch = text.match(/class="alert err">([^<]+)/);
+      const errMsg = errMatch ? errMatch[1] : `HTTP ${res.status}`;
+      showAlert('proxyAlert', `⚠ ${errMsg}`, 'err');
+      addLog(`Save failed: ${errMsg}`, 'err');
+    }
+  } catch (e) {
+    const msg = e.name === 'AbortError' ? 'Request timed out.' : `Network error — ${e.message}`;
+    showAlert('proxyAlert', `⚠ ${msg}`, 'err');
+    addLog(`Save error: ${msg}`, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Apply Settings →';
+  }
+}
+
+// ── CHANGE PASSWORD VIA WORKER ────────────────────────────────────────────────
+async function changePassword() {
+  const btn     = document.getElementById('cpSaveBtn');
+  const current = document.getElementById('cpCurrent').value;
+  const newp    = document.getElementById('cpNew').value;
+  const confirm = document.getElementById('cpConfirm').value;
+
+  hideAlert('cpAlert');
+
+  if (!current)              { showAlert('cpAlert', '⚠ Current password is required.', 'err'); return; }
+  if (!newp)                 { showAlert('cpAlert', '⚠ New password is required.', 'err'); return; }
+  if (newp.length < 6)       { showAlert('cpAlert', '⚠ Password must be at least 6 characters.', 'err'); return; }
+  if (newp !== confirm)      { showAlert('cpAlert', '⚠ New passwords do not match.', 'err'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Updating…';
+
+  const fd = new FormData();
+  fd.set('current', current);
+  fd.set('newpass', newp);
+  fd.set('confirm', confirm);
+
+  try {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 10_000);
+    const res  = await fetch(WORKER_ORIGIN + '/change-password', {
+      method: 'POST', credentials: 'include', body: fd, signal: ctrl.signal
+    });
+    clearTimeout(tid);
+    const text = await res.text();
+
+    if (res.ok && text.includes('alert ok')) {
+      showAlert('cpAlert', '✅ Password updated successfully.', 'ok');
+      document.getElementById('cpCurrent').value = '';
+      document.getElementById('cpNew').value = '';
+      document.getElementById('cpConfirm').value = '';
+      toast('✓ Password updated', 't-green');
+      addLog('Admin password changed.', 'ok');
+    } else {
+      const errMatch = text.match(/class="alert err">([^<]+)/);
+      const errMsg = errMatch ? errMatch[1] : `HTTP ${res.status}`;
+      showAlert('cpAlert', `⚠ ${errMsg}`, 'err');
+      document.getElementById('cpCurrent').value = '';
+      addLog(`Password change failed: ${errMsg}`, 'err');
+    }
+  } catch (e) {
+    const msg = e.name === 'AbortError' ? 'Request timed out.' : `Network error — ${e.message}`;
+    showAlert('cpAlert', `⚠ ${msg}`, 'err');
+    addLog(`Password change error: ${msg}`, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Update Password →';
+  }
+}
+
+// ── LOGOUT ────────────────────────────────────────────────────────────────────
+async function doLogout() {
+  addLog('Logging out — destroying session.', 'info');
+  try {
+    await fetch(WORKER_ORIGIN + '/logout', { credentials: 'include' });
+  } catch (e) {}
+  toast('Session terminated', 't-amber');
+  setTimeout(() => window.location.replace('index.html'), 600);
+}
+
+// ── SESSION PANEL (informational only — uses /auth/me pattern if available) ───
+function renderSessionsPlaceholder() {
+  // Sessions are stored in D1; without a dedicated JSON API route on the worker
+  // we can only show the current session's presence.
+  const tbody = document.getElementById('sessTableBody');
+  const expAt = Math.floor(Date.now() / 1000) + (8 * 3600);
+  tbody.innerHTML = `
+    <tr>
+      <td><span style="color:var(--cyan);font-family:'Share Tech Mono',monospace">current</span></td>
+      <td>${fmtTimestamp(expAt)}</td>
+      <td id="sessCountdown" style="color:var(--green)">${timeRemaining(expAt)}</td>
+      <td><span class="status-badge live" style="font-size:.58rem;padding:3px 8px"><span class="pulse-dot" style="width:5px;height:5px"></span> ACTIVE</span></td>
+    </tr>
+    <tr>
+      <td colspan="4" style="color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:10px 12px;border-top:1px solid var(--border)">
+        // Additional sessions are visible via direct D1 query: SELECT * FROM admin_sessions
+      </td>
+    </tr>`;
+
+  // Live countdown
+  setInterval(() => {
+    const el = document.getElementById('sessCountdown');
+    if (el) el.textContent = timeRemaining(expAt);
+  }, 1000);
+}
+
+// ── TOGGLE HANDLER ────────────────────────────────────────────────────────────
+document.getElementById('proxyToggle').addEventListener('change', function() {
+  const on = this.checked;
+  document.getElementById('swLabel').textContent = on ? 'LIVE' : 'OFFLINE';
+  const pBadge = document.getElementById('proxyStatusBadge');
+  const pDot   = document.getElementById('pBadgeDot');
+  const pLbl   = document.getElementById('pBadgeLbl');
+  if (on) {
+    pBadge.className = 'status-badge live';
+    pDot.className   = 'pulse-dot';
+    pLbl.textContent = 'LIVE';
+  } else {
+    pBadge.className = 'status-badge off';
+    pDot.className   = 'dead-dot';
+    pLbl.textContent = 'OFFLINE';
+  }
+});
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'sessions') renderSessionsPlaceholder();
+  });
+});
+
+// ── BUTTON BINDINGS ───────────────────────────────────────────────────────────
+document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+document.getElementById('changePassBtn').addEventListener('click', () => {
+  ['cpCurrent','cpNew','cpConfirm'].forEach(id => document.getElementById(id).value = '');
+  hideAlert('cpAlert');
+  openModal('changePassModal');
+  setTimeout(() => document.getElementById('cpCurrent').focus(), 50);
+});
+document.getElementById('cpSaveBtn').addEventListener('click', changePassword);
+document.getElementById('cpCancelBtn').addEventListener('click', () => closeModal('changePassModal'));
+document.getElementById('logoutBtn').addEventListener('click', doLogout);
+document.getElementById('nukeSessionsBtn').addEventListener('click', () => openModal('nukeModal'));
+document.getElementById('nukeConfirmBtn').addEventListener('click', async () => {
+  closeModal('nukeModal');
+  addLog('Force-invalidating all sessions via /logout.', 'warn');
+  await doLogout();
+});
+document.getElementById('refreshSessionsBtn').addEventListener('click', () => {
+  renderSessionsPlaceholder();
+  toast('Session data refreshed', 't-cyan');
+});
+document.getElementById('clearLogBtn').addEventListener('click', () => {
+  document.getElementById('logWrap').innerHTML = '';
+  logEntries = [];
+  addLog('Log cleared.', 'info');
+});
+
+// ── AUTH CHECK + INIT ─────────────────────────────────────────────────────────
+document.getElementById('logInitTime').textContent = fmtTime();
+
+(async () => {
+  // Check session via GET / — if worker redirects to /login, we're not authed
+  const gate = document.getElementById('auth-gate');
+  try {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 8_000);
+    const res  = await fetch(WORKER_ORIGIN + '/', {
+      credentials: 'include', signal: ctrl.signal
+    });
+    clearTimeout(tid);
+
+    // If we were redirected to /login, the final URL will contain "login"
+    const finalUrl = res.url || '';
+    if (!res.ok || finalUrl.includes('/login') || finalUrl.includes('/setup')) {
+      addLog('Not authenticated — redirecting to login.', 'warn');
+      window.location.replace('index.html');
+      return;
+    }
+
+    gate.classList.add('hide');
+    addLog('Session confirmed. Loading settings…', 'info');
+    await loadSettings();
+
+  } catch (e) {
+    clearTimeout && void 0;
+    // Network error — still show dashboard (worker may be CF-proxied differently)
+    gate.classList.add('hide');
+    addLog(`Auth check error: ${e.message} — proceeding with defaults.`, 'warn');
+    applyProxyState(0, '');
+  }
+})();
+
+// ── BACKGROUND PARTICLES ──────────────────────────────────────────────────────
+(function spawnParticles() {
+  const container = document.getElementById('bg-particles');
+  for (let i = 0; i < 16; i++) {
+    const p = document.createElement('div');
+    p.className = 'pt';
+    const sz = Math.random() * 2 + 1;
+    p.style.cssText = `
+      width:${sz}px; height:${sz}px;
+      left:${Math.random()*100}%;
+      animation-duration:${8+Math.random()*14}s;
+      animation-delay:${Math.random()*12}s;
+      --dx:${(Math.random()-.5)*80}px;
+      background:${i%6===0?'var(--violet)':i%7===0?'var(--amber)':'var(--cyan)'};
+    `;
+    container.appendChild(p);
+  }
+})();
+</script>
+</body>
+</html>
