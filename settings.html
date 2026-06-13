@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CAPTURES // SETTINGS</title>
   <meta name="description" content="Capture Node Telemetry Dashboard — account settings.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: blob:; connect-src https://snowy-fog-b0d1.23amtics322.workers.dev; frame-ancestors 'none'; base-uri 'none'; form-action 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src data: blob:; connect-src https://snowy-fog-b0d1.23amtics322.workers.dev; frame-ancestors 'none'; base-uri 'none'; form-action 'none';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="DENY">
   <meta http-equiv="Referrer-Policy" content="no-referrer">
@@ -17,9 +17,8 @@
     /* ── DELTHA DISPLAY FONT ──────────────────────────────────────── */
     @font-face {
       font-family: 'Deltha';
-      src: url('fonts/Deltha.woff2') format('woff2'),
-           url('fonts/Deltha.otf')   format('opentype'),
-           url('fonts/Deltha.ttf')   format('truetype');
+      src: url('fonts/Deltha.otf') format('opentype'),
+           url('fonts/Deltha.ttf') format('truetype');
       font-weight: normal;
       font-style: normal;
       font-display: swap;
@@ -322,7 +321,7 @@
       <div class="logo-sub" aria-hidden="true">ACCOUNT SETTINGS</div>
     </div>
     <div class="header-right">
-      <a href="dashboard.html" class="btn btn-cyan hdr-btn" title="Open Dashboard">⊞ DASHBOARD</a>
+      <a href="PHOTONdashboard.html" class="btn btn-cyan hdr-btn" title="Open Dashboard">⊞ DASHBOARD</a>
       <a href="NYTHERIX-ADMIN.html" class="btn btn-violet hdr-btn" title="Open NYTHERIX Admin">◈ NYTHERIX ADMIN</a>
       <a href="settings.html" class="btn btn-amber hdr-btn" title="Account settings">⚙ SETTINGS</a>
       <button class="btn btn-red hdr-btn" id="logoutBtn" title="End session">⏻ DISCONNECT</button>
@@ -369,7 +368,7 @@
       </div>
       <div class="panel-footer">
         <button class="btn btn-amber" id="credSaveBtn" onclick="saveCredentials()">◈ APPLY CHANGES</button>
-        <a class="btn btn-cyan" href="dashboard.html">CANCEL</a>
+        <a class="btn btn-cyan" href="PHOTONdashboard.html">CANCEL</a>
       </div>
     </div>
   </div>
