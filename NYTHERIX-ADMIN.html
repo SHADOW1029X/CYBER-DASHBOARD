@@ -12,6 +12,16 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23020810'/%3E%3Cpolygon points='16,2 30,9 30,23 16,30 2,23 2,9' fill='none' stroke='%2300e5ff' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' font-family='monospace' font-size='13' font-weight='bold' fill='%2300e5ff'%3E%E2%97%88%3C/text%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
+    /* ── DELTHA DISPLAY FONT ──────────────────────────────────────── */
+    @font-face {
+      font-family: 'Deltha';
+      src: url('./Deltha.otf') format('opentype'),
+           url('./Deltha.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
     /* ══════════════════════════════════════════════════════
        TOKENS  (mirrors login.html + PHOTONdashboard.html)
     ══════════════════════════════════════════════════════ */
@@ -41,6 +51,18 @@
       --glow-r: 0 0 8px #ff3b5c77, 0 0 24px #ff3b5c33;
       --glow-v: 0 0 8px #bf7fff77, 0 0 24px #bf7fff33;
       --glow-a: 0 0 8px #ffb30077, 0 0 24px #ffb30033;
+      --font-deltha: 'Deltha', monospace;
+    }
+
+    .logo-top,
+    .panel-title,
+    .btn,
+    .tab,
+    .stat-val,
+    .modal-ttl,
+    th,
+    .sess-table th {
+      font-family: var(--font-deltha) !important;
     }
 
     /* ── RESET ──────────────────────────────────────────── */
@@ -65,15 +87,6 @@
         0deg, transparent, transparent 3px,
         rgba(0,229,255,.007) 3px, rgba(0,229,255,.007) 4px
       );
-    }
-    #bg-grid {
-      position: fixed; bottom: 0; left: 50%; z-index: 0; pointer-events: none;
-      transform: translateX(-50%) rotateX(70deg); transform-origin: center bottom;
-      width: 260vw; height: 160vh;
-      background-image:
-        linear-gradient(rgba(0,229,255,.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,229,255,.06) 1px, transparent 1px);
-      background-size: 56px 56px; opacity: .45;
     }
     #bg-vignette {
       position: fixed; inset: 0; z-index: 1; pointer-events: none;
@@ -242,33 +255,6 @@
     .stat-val.r { color: var(--red);   text-shadow: var(--glow-r); }
     .stat-sub   { font-family: 'Share Tech Mono', monospace; font-size: .55rem; color: var(--text-dim); margin-top: 6px; }
 
-    /* ── TABS ────────────────────────────────────────────── */
-    .tabs {
-      display: flex; gap: 2px;
-      border-bottom: 1px solid var(--border);
-      flex-wrap: wrap; position: relative;
-    }
-    .tab {
-      background: transparent; border: 1px solid transparent; border-bottom: none;
-      padding: 9px 22px; font-family: 'Orbitron', monospace; font-size: .57rem; font-weight: 700;
-      letter-spacing: .16em; color: var(--text-dim); cursor: pointer;
-      border-radius: 3px 3px 0 0; transition: all .2s; position: relative; bottom: -1px;
-      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
-    }
-    .tab:hover { color: var(--cyan); background: rgba(0,229,255,.04); }
-    .tab.active {
-      color: var(--cyan); border-color: var(--border-hi); border-bottom-color: var(--bg);
-      background: var(--panel); text-shadow: var(--glow-c);
-    }
-    .tab.active::after {
-      content: ''; position: absolute; bottom: 0; left: 10%; right: 10%; height: 2px;
-      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-      box-shadow: 0 0 8px var(--cyan);
-    }
-    .tab:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
-    .tab-panel { display: none; padding-top: 24px; }
-    .tab-panel.active { display: block; }
-
     /* ── PANEL CARD ─────────────────────────────────────── */
     .panel {
       background: linear-gradient(135deg, var(--panel2) 0%, rgba(4,13,24,.9) 100%);
@@ -336,14 +322,6 @@
     .field-hint { font-family: 'Share Tech Mono', monospace; font-size: .58rem; color: var(--text-dim); line-height: 1.6; }
 
     /* ── INFO GRID ──────────────────────────────────────── */
-    .info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-    .ic { background: rgba(2,8,16,.7); border: 1px solid var(--border); border-radius: 2px; padding: 12px 14px; }
-    .ic-l { font-family: 'Share Tech Mono', monospace; font-size: .52rem; color: var(--text-dim); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 6px; }
-    .ic-v { font-family: 'Share Tech Mono', monospace; font-size: .7rem; color: var(--text); word-break: break-all; line-height: 1.4; }
-    .ic-v.c { color: var(--cyan); }
-    .ic-v.g { color: var(--green); }
-    .ic-v.a { color: var(--amber); }
-
     /* ── ALERT BAR ──────────────────────────────────────── */
     .alert { display: none; font-family: 'Share Tech Mono', monospace; font-size: .7rem; padding: 10px 14px; margin-bottom: 16px; border-radius: 2px; line-height: 1.6; }
     .alert.show { display: block; }
@@ -396,26 +374,7 @@
     .t-a { border: 1px solid var(--amber);  border-left: 3px solid var(--amber);  color: var(--amber); }
     .t-v { border: 1px solid var(--violet); border-left: 3px solid var(--violet); color: var(--violet); }
 
-    /* ── DANGER ZONE ────────────────────────────────────── */
-    .danger-zone { border: 1px solid var(--red-dim); border-radius: 3px; padding: 18px; position: relative; margin-top: 16px; }
-    .danger-zone::before { content: '⚠ DANGER ZONE'; position: absolute; top: -8px; left: 14px; font-family: 'Orbitron', monospace; font-size: .48rem; letter-spacing: .2em; color: var(--red); background: var(--panel2); padding: 0 8px; }
-    .danger-desc { font-family: 'Share Tech Mono', monospace; font-size: .68rem; color: var(--text-dim); line-height: 1.7; margin-bottom: 14px; }
-
-    /* ── SESSION TABLE ──────────────────────────────────── */
-    .sess-wrap { border: 1px solid var(--border); border-radius: 2px; overflow: auto; background: rgba(2,8,16,.7); }
-    .sess-table { width: 100%; border-collapse: collapse; min-width: 420px; }
-    .sess-table thead { position: sticky; top: 0; z-index: 5; }
-    .sess-table th { background: linear-gradient(180deg, #061624 0%, #040e1a 100%); color: var(--cyan); font-family: 'Orbitron', monospace; font-size: .5rem; font-weight: 700; letter-spacing: .14em; padding: 10px 12px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--cyan-dim); }
-    .sess-table td { padding: 9px 12px; font-family: 'Share Tech Mono', monospace; font-size: .68rem; border-bottom: 1px solid rgba(13,58,82,.4); color: var(--text); }
-    .sess-table tr:hover td { background: rgba(0,229,255,.04); }
-    .sess-table tr:last-child td { border-bottom: none; }
-
     /* ── RESPONSIVE ─────────────────────────────────────── */
-    @media (max-width: 700px) {
-      .stats-row { grid-template-columns: repeat(2,1fr); }
-      .info-grid  { grid-template-columns: 1fr; }
-      #bg-grid    { display: none; }
-    }
     @media (max-width: 480px) { .layout { padding: 0 14px 60px; } .panel { padding: 16px 14px; } }
 
     /* ── AUTH GATE OVERLAY ──────────────────────────────── */
@@ -443,7 +402,6 @@
 </div>
 
 <!-- BG layers -->
-<div id="bg-grid"></div>
 <div id="bg-vignette"></div>
 <div id="bg-glow"></div>
 <div id="bg-violet"></div>
@@ -465,7 +423,10 @@
         <span id="hdrLbl">CHECKING…</span>
       </div>
       <div id="hdrLoader" class="loader"></div>
-      <button class="btn btn-red hdr-btn"    id="logoutBtn">⏻ LOGOUT</button>
+      <a href="dashboard.html" class="btn btn-cyan hdr-btn" title="Open Dashboard">⊞ DASHBOARD</a>
+      <a href="NYTHERIX-ADMIN.html" class="btn btn-violet hdr-btn" title="Open NYTHERIX Admin">◈ NYTHERIX ADMIN</a>
+      <a href="settings.html" class="btn btn-amber hdr-btn" title="Account settings">⚙ SETTINGS</a>
+      <button class="btn btn-red hdr-btn" id="logoutBtn">⏻ DISCONNECT</button>
     </div>
   </header>
 
@@ -481,122 +442,71 @@
       <div class="stat-val v" id="svTarget" style="font-size:.6rem;letter-spacing:0;word-break:break-all;line-height:1.3">—</div>
       <div class="stat-sub">destination host</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-lbl">Database</div>
-      <div class="stat-val" style="font-size:.72rem;letter-spacing:.05em">nytherix_db</div>
-      <div class="stat-sub">binding: DB</div>
+  </div>
+
+  <!-- ════════════════════ PROXY CONTROL ════════════════════ -->
+  <div id="proxyAlert" class="alert"></div>
+
+  <!-- Toggle -->
+  <div class="panel g">
+    <div class="panel-hdr">
+      <div class="panel-title g">Proxy Playback</div>
+      <div id="statusPill" class="status-pill off">
+        <span id="pillDot" class="dead-dot"></span>
+        <span id="pillLbl">OFFLINE</span>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-lbl">Session</div>
-      <div class="stat-val g">ACTIVE</div>
-      <div class="stat-sub">dashboard login</div>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-info-label">Site Proxy</div>
+        <div class="toggle-info-desc">Toggle proxy on / off for all incoming visitors.<br>When live, traffic is forwarded to the target URL.</div>
+      </div>
+      <label class="sw" title="Toggle proxy">
+        <input type="checkbox" id="proxyToggle">
+        <span class="sl"></span>
+      </label>
     </div>
   </div>
 
-  <!-- ════════════════════ TABS ════════════════════ -->
-  <div class="tabs">
-    <button class="tab active" data-tab="proxy">◈ PROXY CONTROL</button>
-    <button class="tab" data-tab="sysinfo">⬡ SYSTEM INFO</button>
-    <button class="tab" data-tab="sessions">⌇ SESSION</button>
+  <!-- Target URL -->
+  <div class="panel v">
+    <div class="panel-hdr">
+      <div class="panel-title v">Target URL</div>
+    </div>
+    <div class="field">
+      <label for="targetUrl">Destination</label>
+      <input type="url" id="targetUrl" placeholder="https://original-website.com" autocomplete="off" spellcheck="false">
+      <div class="field-hint" style="margin-top:6px">
+        The real site visitors will be proxied to. https:// is added automatically if omitted.
+      </div>
+    </div>
+    <button class="btn btn-violet" id="saveBtn" style="margin-top:14px">Apply Settings →</button>
   </div>
 
-  <!-- ═══════════ TAB — PROXY CONTROL ═══════════ -->
-  <div class="tab-panel active" id="tab-proxy">
-
-    <div id="proxyAlert" class="alert"></div>
-
-    <!-- Toggle -->
-    <div class="panel g">
-      <div class="panel-hdr">
-        <div class="panel-title g">Proxy Playback</div>
-        <div id="statusPill" class="status-pill off">
-          <span id="pillDot" class="dead-dot"></span>
-          <span id="pillLbl">OFFLINE</span>
-        </div>
-      </div>
-      <div class="toggle-row">
-        <div>
-          <div class="toggle-info-label">Site Proxy</div>
-          <div class="toggle-info-desc">Toggle proxy on / off for all incoming visitors.<br>When live, traffic is forwarded to the target URL.</div>
-        </div>
-        <label class="sw" title="Toggle proxy">
-          <input type="checkbox" id="proxyToggle">
-          <span class="sl"></span>
-        </label>
+  <!-- User-Facing Sites -->
+  <div class="panel a">
+    <div class="panel-hdr">
+      <div class="panel-title a">User-Facing Sites</div>
+    </div>
+    <div class="field-hint" style="margin-bottom:14px">
+      Live, public-facing endpoints. Share these URLs with end users.
+    </div>
+    <div class="field">
+      <label for="urlNytherix">NYTHERIX — proxy endpoint</label>
+      <div style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap">
+        <input type="text" id="urlNytherix" value="https://nytherix.nytherion.qzz.io" readonly spellcheck="false" style="flex:1; min-width:200px; cursor:text">
+        <button class="btn btn-cyan copy-btn" data-copy-target="urlNytherix">⧉ Copy</button>
       </div>
     </div>
-
-    <!-- Target URL -->
-    <div class="panel v">
-      <div class="panel-hdr">
-        <div class="panel-title v">Target URL</div>
-      </div>
-      <div class="field">
-        <label for="targetUrl">Destination</label>
-        <input type="url" id="targetUrl" placeholder="https://original-website.com" autocomplete="off" spellcheck="false">
-        <div class="field-hint" style="margin-top:6px">
-          The real site visitors will be proxied to. https:// is added automatically if omitted.
-        </div>
-      </div>
-      <button class="btn btn-violet" id="saveBtn" style="margin-top:14px">Apply Settings →</button>
-    </div>
-
-  </div><!-- /tab-proxy -->
-
-  <!-- ═══════════ TAB — SYSTEM INFO ═══════════ -->
-  <div class="tab-panel" id="tab-sysinfo">
-
-    <div class="panel">
-      <div class="panel-hdr"><div class="panel-title">Database &amp; Binding</div></div>
-      <div class="info-grid">
-        <div class="ic"><div class="ic-l">D1 Database</div><div class="ic-v c">nytherix_db</div></div>
-        <div class="ic"><div class="ic-l">DB Binding</div><div class="ic-v c">DB</div></div>
-        <div class="ic"><div class="ic-l">Table</div><div class="ic-v">settings</div></div>
-        <div class="ic"><div class="ic-l">Auth</div><div class="ic-v">delegated to dashboard login</div></div>
-        <div class="ic"><div class="ic-l">Proxy Status</div><div class="ic-v" id="sysProxy">—</div></div>
-        <div class="ic"><div class="ic-l">Current Target</div><div class="ic-v" id="sysTarget" style="word-break:break-all;font-size:.62rem">— not set —</div></div>
+    <div class="field">
+      <label for="urlPhoton">PHOTON — capture node</label>
+      <div style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap">
+        <input type="text" id="urlPhoton" value="https://photon.nytherion.qzz.io" readonly spellcheck="false" style="flex:1; min-width:200px; cursor:text">
+        <button class="btn btn-cyan copy-btn" data-copy-target="urlPhoton">⧉ Copy</button>
       </div>
     </div>
+  </div>
 
-    <div class="panel a">
-      <div class="panel-hdr"><div class="panel-title a">Worker Routes</div></div>
-      <div class="info-grid">
-        <div class="ic"><div class="ic-l">GET /api/settings</div><div class="ic-v">Fetch proxy settings</div></div>
-        <div class="ic"><div class="ic-l">POST /api/settings</div><div class="ic-v">Save proxy settings</div></div>
-        <div class="ic"><div class="ic-l">Auth check (/auth/me)</div><div class="ic-v a">{authenticated: true}</div></div>
-        <div class="ic"><div class="ic-l">Logout (/auth/logout)</div><div class="ic-v">Dashboard login worker</div></div>
-      </div>
-    </div>
-
-  </div><!-- /tab-sysinfo -->
-
-  <!-- ═══════════ TAB — SESSION ═══════════ -->
-  <div class="tab-panel" id="tab-sessions">
-
-    <div class="panel">
-      <div class="panel-hdr">
-        <div class="panel-title">Active Session</div>
-        <button class="btn btn-cyan btn-sm" id="refreshSessBtn">⟳ Refresh</button>
-      </div>
-      <div class="sess-wrap">
-        <table class="sess-table">
-          <thead>
-            <tr><th>Identifier</th><th>Expires At</th><th>Time Remaining</th><th>Status</th></tr>
-          </thead>
-          <tbody id="sessBody"></tbody>
-        </table>
-      </div>
-
-      <div class="danger-zone">
-        <div class="danger-desc">
-          Logging out destroys your current session cookie.<br>
-          You will be redirected to the login page and must re-authenticate.
-        </div>
-        <button class="btn btn-red btn-sm" id="nukeBtn">⏻ Logout &amp; Invalidate Session</button>
-      </div>
-    </div>
-
-  </div><!-- /tab-sessions -->
 
 </div><!-- /.layout -->
 
@@ -700,12 +610,6 @@ function setProxyUI(enabled, targetUrl) {
   sv.className   = `stat-val ${on ? 'g' : 'r'}`;
   document.getElementById('svProxySub').textContent = on ? 'forwarding traffic' : 'proxy disabled';
   document.getElementById('svTarget').textContent   = tgt || '— not configured —';
-
-  // System tab
-  const sp = document.getElementById('sysProxy');
-  sp.textContent   = on ? '🟢 Live' : '⚫ Offline';
-  sp.style.color   = on ? 'var(--green)' : 'var(--text-dim)';
-  document.getElementById('sysTarget').textContent = tgt || '— not set —';
 }
 
 // ── LOAD SETTINGS FROM NYTHERIX WORKER ────────────────────────
@@ -782,41 +686,6 @@ async function doLogout() {
   setTimeout(() => window.location.replace('index.html'), 500);
 }
 
-// ── SESSION TAB ────────────────────────────────────────────────
-function renderSession() {
-  const expAt   = Math.floor(Date.now() / 1000) + (8 * 3600);
-  const tbody   = document.getElementById('sessBody');
-
-  function remaining(e) {
-    const d = e - Math.floor(Date.now() / 1000);
-    if (d <= 0) return 'Expired';
-    return `${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m ${d%60}s`;
-  }
-
-  function fmt(e) {
-    return new Date(e * 1000).toLocaleString();
-  }
-
-  tbody.innerHTML = `
-    <tr>
-      <td style="color:var(--cyan)">current device</td>
-      <td>${fmt(expAt)}</td>
-      <td id="sessTick" style="color:var(--green)">${remaining(expAt)}</td>
-      <td>
-        <span class="status-pill live" style="font-size:.58rem;padding:3px 8px">
-          <span class="pulse-dot" style="width:5px;height:5px"></span> ACTIVE
-        </span>
-      </td>
-    </tr>`;
-
-  // live countdown
-  clearInterval(window._sessInterval);
-  window._sessInterval = setInterval(() => {
-    const el = document.getElementById('sessTick');
-    if (el) el.textContent = remaining(expAt);
-  }, 1000);
-}
-
 // ── TOGGLE SYNC ────────────────────────────────────────────────
 document.getElementById('proxyToggle').addEventListener('change', function () {
   const on = this.checked;
@@ -828,14 +697,17 @@ document.getElementById('proxyToggle').addEventListener('change', function () {
   pillLbl.textContent = on ? 'LIVE' : 'OFFLINE';
 });
 
-// ── TAB SWITCHING ──────────────────────────────────────────────
-document.querySelectorAll('.tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'sessions') renderSession();
+// ── COPY URL BUTTONS ─────────────────────────────────────────────
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const input = document.getElementById(btn.dataset.copyTarget);
+    try {
+      await navigator.clipboard.writeText(input.value);
+      toast('✓ Copied to clipboard', 't-g');
+    } catch (e) {
+      input.select();
+      toast('Select-to-copy: clipboard unavailable', 't-a');
+    }
   });
 });
 
@@ -843,15 +715,9 @@ document.querySelectorAll('.tab').forEach(btn => {
 document.getElementById('saveBtn').addEventListener('click', saveSettings);
 
 document.getElementById('logoutBtn').addEventListener('click', () => openModal('nukeModal'));
-document.getElementById('nukeBtn').addEventListener('click',   () => openModal('nukeModal'));
 document.getElementById('nukeConfirmBtn').addEventListener('click', () => {
   closeModal('nukeModal');
   doLogout();
-});
-
-document.getElementById('refreshSessBtn').addEventListener('click', () => {
-  renderSession();
-  toast('Session refreshed', 't-c');
 });
 
 // ── AUTH GATE — mirrors PHOTONdashboard.html's init block ──────
