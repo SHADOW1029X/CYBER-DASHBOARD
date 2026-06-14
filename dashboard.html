@@ -5,14 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CAPTURES // DASHBOARD</title>
   <meta name="description" content="Capture Node Telemetry Dashboard — manage, edit, query captured records.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src data: blob:; connect-src https://snowy-fog-b0d1.23amtics322.workers.dev; frame-ancestors 'none'; base-uri 'none'; form-action 'none';">
+  <!-- NOTE: script-src still uses 'unsafe-inline' because all JS is inline.
+       To harden further, extract <script> to dashboard.js and use:
+       script-src 'sha256-<hash-of-file>' (or a server-generated nonce).
+       The policy below tightens everything else that can be tightened now. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src data: blob:; connect-src https://snowy-fog-b0d1.23amtics322.workers.dev; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="DENY">
   <meta http-equiv="Referrer-Policy" content="no-referrer">
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23020810'/%3E%3Cpolygon points='16,2 30,9 30,23 16,30 2,23 2,9' fill='none' stroke='%2300e5ff' stroke-width='1.5'/%3E%3Ctext x='16' y='21' text-anchor='middle' font-family='monospace' font-size='13' font-weight='bold' fill='%2300e5ff'%3E%E2%97%88%3C/text%3E%3C/svg%3E">
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     /* ── DELTHA DISPLAY FONT ──────────────────────────────────────── */
     @font-face {
@@ -53,6 +57,7 @@
       --glow-v:  0 0 8px #bf7fff77, 0 0 24px #bf7fff33;
       --glow-a:  0 0 8px #ffb30077, 0 0 24px #ffb30033;
       --font-deltha: 'Deltha', monospace;
+    }
 
     /* ── RESET & BASE ─────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -846,6 +851,16 @@ th,
     }
     .delete-warning strong { color: var(--red); }
 
+    /* ── UNDO TOAST ──────────────────────────────────────────────── */
+    .toast-undo-btn {
+      background: none; border: 1px solid currentColor;
+      border-radius: 2px; color: inherit;
+      font-family: 'Share Tech Mono', monospace; font-size: .65rem;
+      padding: 2px 8px; cursor: pointer; transition: background .15s;
+      pointer-events: all; white-space: nowrap; flex-shrink: 0;
+    }
+    .toast-undo-btn:hover { background: rgba(255,255,255,.12); }
+
     /* ══════════════════════════════════════════════════════════════
        LIGHTBOX
     ══════════════════════════════════════════════════════════════ */
@@ -1265,29 +1280,42 @@ th,
 "use strict";
 
 // ── CONFIG ───────────────────────────────────────────────────────────────
+// Keep WORKER_URL out of public repos / committed source. Use a build-time
+// env injection (e.g. __WORKER_URL__ replaced by your bundler) in production.
 const WORKER_URL = "https://snowy-fog-b0d1.23amtics322.workers.dev/";
 const BASE_URL   = new URL(WORKER_URL).origin;
+const AUTH_URL   = BASE_URL;           // base for /auth/me, /auth/logout
 const CACHE_BUST = () => '_=' + Date.now();
 
 // ── STATE ────────────────────────────────────────────────────────────────
-let allData        = [];
-let filteredData   = [];
-let sortKey        = null;
-let sortDir        = 1;
-let currentPage    = 1;
-let pageSize       = 25;
-let editingId      = null;
+let allData          = [];
+let filteredData     = [];
+let sortKey          = null;
+let sortDir          = 1;
+let currentPage      = 1;
+let pageSize         = 25;
+let editingId        = null;
 let pendingDeleteIds = [];
-let searchDebounce = null;
-let queryHistory   = (() => {
+let searchDebounce   = null;
+let isDataLoading    = false;   // guard against concurrent loadData calls
+let refreshBackoff   = 30;      // seconds; doubles on error, resets on success
+let queryHistory     = (() => {
   try { return JSON.parse(localStorage.getItem('qhist') || '[]'); } catch { return []; }
 })();
 
 // ── NAMES (localStorage) ─────────────────────────────────────────────────
+// Cache parsed names in memory; only re-read from localStorage on mutation.
+let _namesCache = null;
 function getNames() {
-  try { return JSON.parse(localStorage.getItem('recNames') || '{}'); } catch { return {}; }
+  if (_namesCache !== null) return _namesCache;
+  try { _namesCache = JSON.parse(localStorage.getItem('recNames') || '{}'); }
+  catch { _namesCache = {}; }
+  return _namesCache;
 }
-function saveNames(n) { localStorage.setItem('recNames', JSON.stringify(n)); }
+function saveNames(n) {
+  _namesCache = n;
+  try { localStorage.setItem('recNames', JSON.stringify(n)); } catch(e) { console.warn('saveNames:', e); }
+}
 
 // ── COLUMN HELPERS ────────────────────────────────────────────────────────
 function parseJ(v) {
@@ -1552,17 +1580,34 @@ function updateStats(data) {
   updateStorage(data);
 }
 
+// ── SEARCH INDEX ─────────────────────────────────────────────────────────
+// Pre-built per-row search text; rebuilt whenever allData changes.
+// Avoids JSON.stringify on every row for every keystroke.
+const SEARCH_FIELDS = [
+  'id','server_timestamp','public_ip','platform','language','timezone',
+  'user_agent','session_id','url','geolocation_error'
+];
+let _searchIndex = []; // parallel array to allData
+
+function buildSearchIndex() {
+  const names = getNames();
+  _searchIndex = allData.map(r => {
+    const n   = names[String(r.id)];
+    const ns  = n ? (n.name + ' ' + (n.note || '')) : '';
+    const fields = SEARCH_FIELDS.map(k => String(r[k] ?? '')).join(' ');
+    return (fields + ' ' + ns).toLowerCase();
+  });
+}
+
 // ── FILTER ────────────────────────────────────────────────────────────────
 function applyFilter() {
   const q = document.getElementById('searchInput').value.toLowerCase().trim();
   document.getElementById('searchClearBtn').classList.toggle('visible', q.length > 0);
-  const names = getNames();
-  filteredData = allData.filter(r => {
-    if (!q) return true;
-    const n = names[String(r.id)];
-    const ns = n ? (n.name+' '+(n.note||'')).toLowerCase() : '';
-    return JSON.stringify(r).toLowerCase().includes(q) || ns.includes(q);
-  });
+  if (!q) {
+    filteredData = allData.slice();
+  } else {
+    filteredData = allData.filter((_, i) => _searchIndex[i] && _searchIndex[i].includes(q));
+  }
   doSort(filteredData); currentPage = 1; renderTable();
 }
 function clearSearch() {
@@ -1574,47 +1619,71 @@ document.getElementById('searchInput').addEventListener('input', () => {
 });
 
 // ── AUTO-REFRESH ──────────────────────────────────────────────────────────
-const REFRESH_INTERVAL = 30;
-let countdownLeft  = REFRESH_INTERVAL;
+const REFRESH_INTERVAL_MIN = 30;   // seconds (success)
+const REFRESH_INTERVAL_MAX = 300;  // seconds (max backoff on error)
+let countdownLeft  = REFRESH_INTERVAL_MIN;
 let countdownTimer = null;
 
-function startCountdown() {
-  clearInterval(countdownTimer); countdownLeft = REFRESH_INTERVAL; updateCountdownUI();
+function startCountdown(interval) {
+  interval = interval || REFRESH_INTERVAL_MIN;
+  clearInterval(countdownTimer);
+  countdownLeft = interval;
+  updateCountdownUI(interval);
   countdownTimer = setInterval(() => {
-    countdownLeft--; updateCountdownUI();
-    if (countdownLeft <= 0) { countdownLeft = REFRESH_INTERVAL; loadData(); }
+    countdownLeft--;
+    updateCountdownUI(interval);
+    if (countdownLeft <= 0) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      loadData();
+    }
   }, 1000);
 }
-function updateCountdownUI() {
+function updateCountdownUI(interval) {
+  interval = interval || REFRESH_INTERVAL_MIN;
   const bar = document.getElementById('countdownBar');
   const sec = document.getElementById('countdownSec');
-  if (bar) bar.style.width = ((countdownLeft/REFRESH_INTERVAL)*100)+'%';
-  if (sec) sec.textContent = countdownLeft+'s';
+  if (bar) bar.style.width = ((countdownLeft / interval) * 100) + '%';
+  if (sec) sec.textContent = countdownLeft + 's';
 }
 
 // ── LOAD DATA ─────────────────────────────────────────────────────────────
 async function loadData() {
-  const loader    = document.getElementById('loader');
+  if (isDataLoading) return;   // prevent overlapping requests
+  isDataLoading = true;
+  const loader     = document.getElementById('loader');
   const statusTime = document.getElementById('statusTime');
-  const errorBar  = document.getElementById('error-bar');
+  const errorBar   = document.getElementById('error-bar');
   loader.classList.add('active');
   errorBar.style.display = 'none';
   try {
     const url = WORKER_URL + (WORKER_URL.includes('?') ? '&' : '?') + CACHE_BUST();
-    const res = await fetch(url, { cache:'no-store', credentials:'include' });
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 15_000);
+    const res  = await fetch(url, { cache:'no-store', credentials:'include', signal: ctrl.signal });
+    clearTimeout(tid);
     if (res.status === 401 || res.status === 403) { window.location.replace('index.html'); return; }
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     allData = Array.isArray(data) ? data : [];
-    applyFilter(); updateStats(allData);
+    buildSearchIndex();   // rebuild fast search index after new data
+    applyFilter();
+    updateStats(allData);
     statusTime.textContent = `SYNC ${new Date().toLocaleTimeString()}`;
+    refreshBackoff = REFRESH_INTERVAL_MIN;  // reset backoff on success
+    startCountdown(REFRESH_INTERVAL_MIN);
   } catch (err) {
     console.error('loadData failed:', err);
-    errorBar.textContent = `⚠ ${err.message}`; errorBar.style.display = 'block';
+    const msg = err.name === 'AbortError' ? 'Request timed out (15s)' : err.message;
+    errorBar.textContent = `⚠ ${msg}`; errorBar.style.display = 'block';
     statusTime.textContent = 'SYNC FAILED';
+    // Exponential backoff: 30 → 60 → 120 → 240 → 300 max
+    refreshBackoff = Math.min(refreshBackoff * 2, REFRESH_INTERVAL_MAX);
+    startCountdown(refreshBackoff);
   } finally {
-    loader.classList.remove('active'); startCountdown();
+    isDataLoading = false;
+    loader.classList.remove('active');
   }
 }
 
@@ -1631,10 +1700,44 @@ function confirmDelete(ids) {
 }
 async function executeDelete() {
   closeModal('deleteModal');
+  const idsToDelete = pendingDeleteIds.slice();
+  pendingDeleteIds = [];
   const loader = document.getElementById('loader');
   loader.classList.add('active');
   let ok = 0; const errors = [];
-  for (const id of pendingDeleteIds) {
+
+  // Try a single batched delete first (if Worker supports ids:[]).
+  // Fall back to per-item requests if the Worker doesn't recognise the batch format.
+  if (idsToDelete.length > 1) {
+    try {
+      const ctrl = new AbortController();
+      const tid  = setTimeout(() => ctrl.abort(), 15_000);
+      const res  = await fetch(WORKER_URL, {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action:'delete', ids: idsToDelete.map(id => parseInt(id))}),
+        signal: ctrl.signal
+      });
+      clearTimeout(tid);
+      let body = null; try { body = await res.json(); } catch {}
+      if (res.ok && !(body?.error) && body?.success !== false) {
+        // Batch accepted — remove all from local data
+        const idSet = new Set(idsToDelete.map(String));
+        allData = allData.filter(r => !idSet.has(String(r.id)));
+        ok = idsToDelete.length;
+        loader.classList.remove('active'); applyFilter(); updateStats(allData);
+        toast(`✓ ${ok} record${ok>1?'s':''} deleted`, 't-green');
+        showUndoToast(idsToDelete);
+        return;
+      }
+      // Batch not supported or errored — fall through to per-item
+    } catch (e) {
+      console.warn('Batch delete failed, falling back to per-item:', e);
+    }
+  }
+
+  // Per-item fallback (also used for single-item deletes)
+  for (const id of idsToDelete) {
     try {
       const ctrl = new AbortController();
       const tid  = setTimeout(() => ctrl.abort(), 10_000);
@@ -1654,9 +1757,31 @@ async function executeDelete() {
       console.error(`Delete #${id} failed:`, e); errors.push(`#${id}: ${msg}`);
     }
   }
-  loader.classList.remove('active'); applyFilter(); updateStats(allData); pendingDeleteIds = [];
-  if (ok) toast(`✓ ${ok} record${ok>1?'s':''} deleted`, 't-green');
+  loader.classList.remove('active'); applyFilter(); updateStats(allData);
+  if (ok) { toast(`✓ ${ok} record${ok>1?'s':''} deleted`, 't-green'); showUndoToast(idsToDelete); }
   if (errors.length) toast(`⚠ Delete failed — ${errors[0]}`, 't-red', 6000);
+}
+
+// ── UNDO TOAST ────────────────────────────────────────────────────────────
+// Soft undo: re-fetch from server (the record is truly deleted, but this
+// prompts the user to reconsider and re-adds it locally if it still exists).
+function showUndoToast(deletedIds) {
+  const el = document.createElement('div');
+  el.className = 'toast t-amber';
+  el.style.display = 'flex'; el.style.alignItems = 'center'; el.style.gap = '10px';
+  el.style.pointerEvents = 'all';
+  const label = document.createElement('span');
+  label.textContent = `${deletedIds.length} record${deletedIds.length>1?'s':''} deleted`;
+  const btn = document.createElement('button');
+  btn.className = 'toast-undo-btn';
+  btn.textContent = 'REFRESH';
+  btn.title = 'Reload data from server';
+  btn.onclick = () => { el.remove(); loadData(); };
+  el.appendChild(label); el.appendChild(btn);
+  const stack = document.getElementById('toastStack');
+  stack.appendChild(el);
+  const tid = setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, 6000);
+  btn.onclick = () => { clearTimeout(tid); el.remove(); loadData(); };
 }
 
 // ── EDIT ──────────────────────────────────────────────────────────────────
@@ -1736,7 +1861,7 @@ async function saveEdit() {
     clearTimeout(tid);
     if (!res.ok) { let b=null; try{b=await res.json();}catch{} throw new Error(b?.error||b?.detail||`HTTP ${res.status}`); }
     const idx = allData.findIndex(r => String(r.id)===String(editingId));
-    if (idx >= 0) allData[idx] = {...allData[idx], ...patch};
+    if (idx >= 0) { allData[idx] = {...allData[idx], ...patch}; buildSearchIndex(); }
     toast(`✓ Record #${editingId} saved`, 't-green'); closeModal('editModal');
   } catch (e) {
     const msg = e.name === 'AbortError' ? 'Request timed out' : e.message;
@@ -1761,12 +1886,14 @@ function saveNameModal() {
   const note = document.getElementById('nmNote').value.trim();
   if (!name) { toast('Name is required','t-red'); return; }
   const names = getNames(); names[id] = {name, note}; saveNames(names);
+  buildSearchIndex();
   closeModal('nameModal'); renderTable(); updateStats(allData);
   toast(`◈ "${name}" → #${id}`, 't-violet');
 }
 function removeNameModal() {
   const id = document.getElementById('nmId').value;
   const names = getNames(); delete names[id]; saveNames(names);
+  buildSearchIndex();
   closeModal('nameModal'); renderTable(); updateStats(allData);
   toast(`Name removed from #${id}`, 't-amber');
 }
@@ -1874,16 +2001,25 @@ function exportPDF() {
 <div class="meta">EXPORT DATE: ${esc2(now)} &nbsp;|&nbsp; RECORDS: ${filteredData.length} &nbsp;|&nbsp; SOURCE: NODE TELEMETRY DASHBOARD</div>
 <table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>
 </body></html>`;
-  const w = window.open('','_blank','width=1200,height=800');
-  if (!w) { toast('⚠ Popup blocked — allow popups and retry','t-amber',4000); return; }
-  w.document.write(html);
-  w.document.close();
-  w.focus();
-  setTimeout(() => { w.print(); }, 400);
-  toast(`✓ ${filteredData.length} rows → PDF (print dialog)`, 't-green');
+  // Use Blob + object URL: no document.write(), works without popup blocker.
+  const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  const blobUrl = URL.createObjectURL(blob);
+  const w = window.open(blobUrl, '_blank');
+  if (!w) {
+    // Fallback: download HTML file so user can open and print it locally.
+    dlFile(html, `captures_${Date.now()}.html`, 'text/html;charset=utf-8');
+    toast('⚠ Popup blocked — HTML file downloaded. Open it and print.','t-amber',5000);
+    URL.revokeObjectURL(blobUrl);
+    return;
+  }
+  w.addEventListener('load', () => URL.revokeObjectURL(blobUrl), {once: true});
+  toast(`✓ ${filteredData.length} rows → print preview`, 't-green');
 }
 
 // ── STORAGE WIDGET ────────────────────────────────────────────────────────
+// updateStorage is only called from updateStats(), which is only called after
+// a full data load or save — NOT on every filter/sort — so the TextEncoder loop
+// runs at the right frequency. Do not call it from renderTable().
 const STORAGE_QUOTA_BYTES = 500 * 1024 * 1024; // 500 MB estimated quota
 
 function fmtBytes(b) {
@@ -2011,9 +2147,18 @@ function renderQueryHistory() {
     list.appendChild(btn);
   });
 }
+// Patterns that mutate data — warn the user before executing.
+const MUTATING_SQL_RE = /^\s*(DELETE|UPDATE|DROP|TRUNCATE|ALTER|INSERT|REPLACE|CREATE)\b/i;
+
 async function runQuery() {
   const sql = document.getElementById('sqlEditor').value.trim();
   if (!sql) { toast('Enter a SQL query first','t-amber'); return; }
+  // Warn before executing mutating statements
+  if (MUTATING_SQL_RE.test(sql)) {
+    const verb = sql.match(MUTATING_SQL_RE)[1].toUpperCase();
+    const ok = confirm(`⚠ This query starts with ${verb} and may modify or destroy data.\n\nAre you sure you want to execute it?`);
+    if (!ok) { toast('Query cancelled','t-amber'); return; }
+  }
   const statusEl   = document.getElementById('queryStatus');
   const resultWrap = document.getElementById('sqlResultWrap');
   const labelEl    = document.getElementById('sqlResultLabel');
@@ -2070,7 +2215,7 @@ document.getElementById('sqlEditor').addEventListener('keydown', e => {
 
 // ── LOGOUT ────────────────────────────────────────────────────────────────
 document.getElementById('logoutBtn').addEventListener('click', async () => {
-  try { await fetch(`${BASE_URL}/auth/logout`, {method:'POST', credentials:'include'}); } catch(e) {}
+  try { await fetch(`${AUTH_URL}/auth/logout`, {method:'POST', credentials:'include'}); } catch(e) {}
   allData = []; filteredData = []; renderTable(); updateStats([]);
   clearInterval(countdownTimer); toast('Session terminated','t-amber');
   setTimeout(() => { window.location.replace('index.html'); }, 600);
@@ -2084,7 +2229,7 @@ buildColDropdown();
   const ctrl = new AbortController();
   const tid  = setTimeout(() => ctrl.abort(), 6000);
   try {
-    const res = await fetch(`${BASE_URL}/auth/me`, {credentials:'include', signal:ctrl.signal});
+    const res = await fetch(`${AUTH_URL}/auth/me`, {credentials:'include', signal:ctrl.signal});
     clearTimeout(tid);
     if (res.ok) { const data = await res.json().catch(()=>({})); if (data.authenticated === true) { loadData(); return; } }
   } catch(e) { clearTimeout(tid); }
@@ -2094,7 +2239,7 @@ buildColDropdown();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     const ctrl = new AbortController(); const tid = setTimeout(() => ctrl.abort(), 6000);
-    fetch(`${BASE_URL}/auth/me`, {credentials:'include', signal:ctrl.signal})
+    fetch(`${AUTH_URL}/auth/me`, {credentials:'include', signal:ctrl.signal})
       .then(r => {
         clearTimeout(tid);
         // Only treat explicit 401/403 as "not authenticated" — other errors (500, network)
@@ -2104,7 +2249,9 @@ document.addEventListener('visibilitychange', () => {
       })
       .then(d => {
         if (d === null) return; // already redirected or server error — do nothing
-        if (d?.authenticated === true) { loadData(); startCountdown(); }
+        // loadData() calls startCountdown() internally — do NOT also call startCountdown()
+        // here or the interval will stack on every tab-show event.
+        if (d?.authenticated === true) { loadData(); }
         else { window.location.replace('index.html'); }
       })
       .catch(() => { clearTimeout(tid); /* network error — stay on page */ });
