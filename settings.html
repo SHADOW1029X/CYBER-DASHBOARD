@@ -91,20 +91,25 @@
     }
 
     /* ── LAYOUT ───────────────────────────────────────────────────── */
-    .layout { position: relative; z-index: 2; max-width: 1760px; margin: 0 auto; padding: 0 24px 80px; }
+    :root { --layout-px: 24px; }
+    .layout { position: relative; z-index: 2; max-width: 1760px; margin: 0 auto; padding: 0 var(--layout-px) 80px; }
 
     /* ── NAVBAR ───────────────────────────────────────────────────── */
     header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 22px 24px 18px;
-      border-bottom: 1px solid transparent;
-      border-image: linear-gradient(90deg, transparent, var(--border-hi) 20%, var(--cyan-dim) 50%, var(--border-hi) 80%, transparent) 1;
+      padding: 22px var(--layout-px) 18px;
       gap: 16px; flex-wrap: nowrap;
       position: sticky; top: 0; z-index: 5000;
       background: rgba(2,8,16,.92);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      margin: 0 -24px 0;
+      margin: 0 calc(var(--layout-px) * -1) 0;
+    }
+    /* pseudo border — avoids border-image + backdrop-filter Safari conflict */
+    header::before {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-hi) 20%, var(--cyan-dim) 50%, var(--border-hi) 80%, transparent);
+      pointer-events: none;
     }
     header::after {
       content: ''; position: absolute; bottom: -1px; left: -5%; right: -5%; height: 1px;
@@ -112,7 +117,10 @@
       animation: headerScan 4s ease-in-out infinite; opacity: .4;
     }
     @keyframes headerScan { 0%,100%{transform:scaleX(0);opacity:0} 50%{transform:scaleX(1);opacity:.5} }
-    @media (max-width: 860px) { header { flex-wrap: wrap; } .header-right { gap: 7px; flex-wrap: wrap; } }
+    @media (max-width: 860px) {
+      :root { --layout-px: 14px; }
+      header { flex-wrap: wrap; } .header-right { gap: 7px; flex-wrap: wrap; }
+    }
 
     .logo-block { display: flex; flex-direction: column; gap: 3px; }
     .logo-top {
