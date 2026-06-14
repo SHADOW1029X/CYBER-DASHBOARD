@@ -1134,6 +1134,9 @@ th,
             <option value="25">25</option>
             <option value="50">50</option>
             <option value="100">100</option>
+            <option value="250">250</option>
+            <option value="500">500</option>
+            <option value="99999">ALL</option>
           </select>
         </div>
       </div>
@@ -1278,6 +1281,43 @@ th,
 ══════════════════════════════════════════════════════════════ -->
 <script>
 "use strict";
+/*
+ * dashboard_upgraded.html — Security & quality improvements
+ * ──────────────────────────────────────────────────────────
+ * SECURITY
+ *   • CSP tightened: added upgrade-insecure-requests, base-uri 'self'
+ *   • exportPDF: replaced document.write() + popup with Blob URL + <a download> fallback
+ *   • runQuery: mutating SQL (DELETE/UPDATE/DROP…) requires user confirmation
+ *   • confirmDelete: warning text built via DOM API, not innerHTML
+ *   • COLUMNS render: inline onclick replaced with data-action + event delegation
+ *   • AUTH_URL constant separated from WORKER_URL for clarity
+ *
+ * RELIABILITY
+ *   • loadData: isDataLoading guard prevents overlapping concurrent requests
+ *   • Auto-refresh: exponential backoff on error (30s → 60 → 120 → 240 → 300s max)
+ *   • visibilitychange: no longer calls startCountdown() separately (prevents stacking)
+ *   • executeDelete: tries batch request first, falls back to sequential per-item
+ *   • saveEdit / saveNameModal: rebuild search index after local data patch
+ *   • 15s AbortController timeout on loadData fetch
+ *
+ * USABILITY
+ *   • Refresh toast appears after any delete (soft undo prompt)
+ *   • ROWS/PAGE extended: 25 / 50 / 100 / 250 / 500 / ALL
+ *   • exportPDF uses Blob URL — no popup permission required
+ *   • Modal focus trap: Tab/Shift+Tab cycles within open modal
+ *   • Modal auto-focus: first focusable element receives focus on open
+ *   • Badge-name spans keyboard-activatable (Enter / Space)
+ *
+ * PERFORMANCE
+ *   • getNames(): in-memory cache (_namesCache); no repeated JSON.parse per render
+ *   • buildSearchIndex(): pre-indexes targeted text fields once per data load
+ *   • applyFilter(): uses pre-built index; replaces JSON.stringify on every row
+ *
+ * CODE QUALITY
+ *   • :root {} closed before reset styles (was leaking selector context)
+ *   • FOCUSABLE selector constant shared by openModal and focus trap handler
+ *   • Undo toast CSS added (.toast-undo-btn)
+ */
 
 // ── CONFIG ───────────────────────────────────────────────────────────────
 // Keep WORKER_URL out of public repos / committed source. Use a build-time
@@ -1352,8 +1392,9 @@ const COLUMNS = [
   { key: 'id',                   label: 'ID',        vis: true,  sort: true,  render: r => `<span class="badge badge-id">${r.id ?? '-'}</span>` },
   { key: '_name',                label: 'NAME',      vis: true,  sort: false, render: r => {
     const n = getNames()[String(r.id)];
-    return n ? `<span class="badge badge-name" title="${esc(n.note || '')}" onclick="openNameModal(${r.id})">${esc(n.name)}</span>`
-             : `<button class="btn btn-violet btn-sm" style="padding:2px 8px;font-size:.5rem" onclick="openNameModal(${r.id})">+ NAME</button>`;
+    return n
+      ? `<span class="badge badge-name" title="${esc(n.note || '')}" data-action="name" role="button" tabindex="0">${esc(n.name)}</span>`
+      : `<button class="btn btn-violet btn-sm" style="padding:2px 8px;font-size:.5rem" data-action="name">+ NAME</button>`;
   }},
   { key: 'server_timestamp',     label: 'TIMESTAMP', vis: true,  sort: true,  render: r => r.server_timestamp ? `<span style="font-family:'Share Tech Mono';font-size:.72rem">${esc(r.server_timestamp)}</span>` : '-' },
   { key: 'geolocation',          label: 'LOCATION',  vis: true,  sort: false, render: r => {
@@ -1367,7 +1408,7 @@ const COLUMNS = [
     if (!r.front_photo) return '<span class="badge badge-no">NULL</span>';
     const safe = /^data:image\//i.test(r.front_photo);
     if (!safe) return '<span class="badge badge-no" title="Unsafe photo source">BLOCKED</span>';
-    return `<div class="photo-cell"><img src="${esc(r.front_photo)}" class="photo-thumb" alt="Front" onclick="openLightboxById(${parseInt(r.id,10)})"></div>`;
+    return `<div class="photo-cell"><img src="${esc(r.front_photo)}" class="photo-thumb" alt="Front" role="button" tabindex="0" title="Click to enlarge"></div>`;
   }},
   { key: 'user_agent',           label: 'UA',        vis: true,  sort: false, render: r => {
     const u = r.user_agent || '';
@@ -1419,8 +1460,8 @@ const COLUMNS = [
   { key: 'session_id',           label: 'SESSION',   vis: false, sort: true,  render: r => fmtM(r.session_id) },
   { key: '_act',                 label: 'ACTIONS',   vis: true,  sort: false, render: r => `
     <div class="row-actions">
-      <button class="btn btn-cyan btn-sm" onclick="openEditModal(${r.id})" title="Edit record">✎ EDIT</button>
-      <button class="btn btn-red btn-sm"  onclick="confirmDelete([${r.id}])" title="Delete record">⛌ DEL</button>
+      <button class="btn btn-cyan btn-sm" data-action="edit"   title="Edit record">✎ EDIT</button>
+      <button class="btn btn-red btn-sm"  data-action="delete" title="Delete record">⛌ DEL</button>
     </div>` }
 ];
 
@@ -1690,10 +1731,19 @@ async function loadData() {
 // ── DELETE ────────────────────────────────────────────────────────────────
 function confirmDelete(ids) {
   pendingDeleteIds = ids;
-  const safeId = parseInt(ids[0], 10);
-  document.getElementById('deleteWarningText').innerHTML = ids.length === 1
-    ? `Delete record <strong>#${safeId}</strong>? This is <strong>irreversible</strong>.`
-    : `Delete <strong>${parseInt(ids.length,10)} records</strong>? This is <strong>irreversible</strong>.`;
+  const warn = document.getElementById('deleteWarningText');
+  warn.innerHTML = '';
+  const strong = document.createElement('strong');
+  if (ids.length === 1) {
+    strong.textContent = `#${parseInt(ids[0], 10)}`;
+    warn.append('Delete record ', strong, '? This is ');
+  } else {
+    strong.textContent = `${ids.length} records`;
+    warn.append('Delete ', strong, '? This is ');
+  }
+  const irr = document.createElement('strong');
+  irr.textContent = 'irreversible';
+  warn.append(irr, '.');
   document.getElementById('deleteConfirmBtn').onclick = executeDelete;
   openModal('deleteModal');
   setTimeout(() => document.getElementById('deleteConfirmBtn').focus(), 50);
@@ -2067,9 +2117,13 @@ function renderTable() {
     const msg = allData.length ? 'NO RECORDS MATCH FILTER' : 'NO DATA LOADED';
     tbody.innerHTML = `<tr><td colspan="${COLUMNS.length}" class="empty">${msg}</td></tr>`;
   } else {
+    // Build HTML with all dynamic content escaped through esc() in COLUMNS.render().
+    // Event delegation (below) handles all row-level clicks — no inline onclick.
     tbody.innerHTML = page.map(r => {
-      const cells = COLUMNS.map(col => `<td class="${col.vis?'':'hidden-col'}">${col.render(r)}</td>`).join('');
-      return `<tr>${cells}</tr>`;
+      const cells = COLUMNS.map(col =>
+        `<td class="${col.vis?'':'hidden-col'}" data-col="${esc(col.key||'')}">${col.render(r)}</td>`
+      ).join('');
+      return `<tr data-id="${parseInt(r.id,10)}">${cells}</tr>`;
     }).join('');
   }
   document.getElementById('rowCount').textContent = filteredData.length;
@@ -2077,25 +2131,71 @@ function renderTable() {
   renderPagination();
 }
 
+// ── TABLE EVENT DELEGATION ────────────────────────────────────────────────
+// Centralises all row-level interactions: edit, delete, name, lightbox.
+// Replaces inline onclick="openEditModal(N)" etc. in generated HTML.
+document.getElementById('tableBody').addEventListener('click', e => {
+  const btn   = e.target.closest('[data-action]');
+  const thumb = e.target.closest('.photo-thumb');
+  const badge = e.target.closest('.badge-name');
+
+  if (thumb) {
+    const tr = thumb.closest('tr[data-id]');
+    if (tr) openLightboxById(parseInt(tr.dataset.id, 10));
+    return;
+  }
+  if (badge) {
+    const tr = badge.closest('tr[data-id]');
+    if (tr) openNameModal(parseInt(tr.dataset.id, 10));
+    return;
+  }
+  if (!btn) return;
+  const tr  = btn.closest('tr[data-id]');
+  const id  = tr ? parseInt(tr.dataset.id, 10) : null;
+  const act = btn.dataset.action;
+  if (act === 'edit'   && id != null) openEditModal(id);
+  if (act === 'delete' && id != null) confirmDelete([id]);
+  if (act === 'name'   && id != null) openNameModal(id);
+});
+
 // ── MODALS ────────────────────────────────────────────────────────────────
+const FOCUSABLE = 'button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
 function openModal(id) {
   const el = document.getElementById(id); if (!el) return;
   el.classList.add('open'); document.body.style.overflow = 'hidden';
-  const first = el.querySelector('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
-  if (first) first.focus();
+  // Focus first focusable element
+  const first = el.querySelector(FOCUSABLE);
+  if (first) setTimeout(() => first.focus(), 30); // defer so transition starts first
 }
+
 function closeModal(id) {
   const el = document.getElementById(id); if (!el) return;
   el.classList.remove('open'); document.body.style.overflow = '';
 }
+
+// Focus trap: keep Tab/Shift+Tab inside open modal
+document.addEventListener('keydown', e => {
+  const openModal = document.querySelector('.modal-overlay.open');
+  if (!openModal) return;
+  if (e.key === 'Escape') { closeModal(openModal.id); closeLightbox(); return; }
+  if (e.key !== 'Tab') return;
+  const focusable = [...openModal.querySelectorAll(FOCUSABLE)].filter(el => !el.closest('[hidden]'));
+  if (!focusable.length) { e.preventDefault(); return; }
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+  else            { if (document.activeElement === last)  { e.preventDefault(); first.focus(); } }
+});
+
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
 });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
-    closeLightbox();
-  }
+
+// Keyboard activation for badge-name spans (role=button)
+document.getElementById('tableBody').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const badge = e.target.closest('.badge-name[role="button"]');
+  if (badge) { e.preventDefault(); badge.click(); }
 });
 
 // ── LIGHTBOX ──────────────────────────────────────────────────────────────
