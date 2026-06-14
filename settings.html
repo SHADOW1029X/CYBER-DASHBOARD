@@ -59,8 +59,7 @@
       --font-deltha: 'Deltha', monospace;
     }
 
-    .logo-top, .panel-title, .btn, .tab-btn, .stat-value,
-    .query-box-title, .modal-title, th, .sql-result-table th, .page-btn {
+    .logo-top, .panel-title, .btn {
       font-family: var(--font-deltha) !important;
     }
 
@@ -359,7 +358,9 @@
     @media (hover: none) and (pointer: coarse) {
       .hdr-btn    { min-height: 44px; }
       .btn        { min-height: 44px; }
-      .pw-toggle  { min-width: 44px; min-height: 44px; }
+      .pw-toggle::before {
+        content: ''; position: absolute; inset: -11px; /* expands tap target to ~44px without resizing the visible icon */
+      }
     }
 
     /* ── iOS input zoom prevention (font-size must be ≥16px) ── */
@@ -747,7 +748,9 @@ document.querySelectorAll('.field-input').forEach(inp => {
   }
 
   init();
-  animate();
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    animate();
+  }
 
   function init() {
     const canvas = document.querySelector("#webgl-canvas");
