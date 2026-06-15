@@ -221,10 +221,9 @@ th,
     /* Header right cluster */
     .header-right {
       display: flex; align-items: center; gap: 10px;
-      flex-shrink: 0;
+      flex-shrink: 0; flex-wrap: wrap;
     }
-    /* Ensure header never wraps the right cluster off screen */
-    header { flex-wrap: nowrap; }
+    /* Ensure header never wraps the right cluster off screen on wide viewports */
     @media (max-width: 860px) {
       header { flex-wrap: wrap; }
       .header-right { gap: 7px; }
@@ -431,7 +430,7 @@ th,
       gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
     }
     .search-wrap {
-      position: relative; flex: 1; min-width: 200px;
+      position: relative; flex: 1 1 160px; min-width: 0;
     }
     .search-wrap::before {
       content: '⌕';
@@ -494,9 +493,13 @@ th,
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 3px; overflow: auto;
+      -webkit-overflow-scrolling: touch; /* smooth momentum scroll on iOS */
       box-shadow: 0 8px 40px rgba(0,0,0,.7), inset 0 1px 0 rgba(0,229,255,.06);
       position: relative;
     }
+    /* Scroll-hint: fades in a right-side shadow when table overflows horizontally */
+    .table-wrap { background-attachment: local, local, scroll, scroll; }
+
     /* Top glow strip */
     .table-wrap::before {
       content: '';
@@ -911,15 +914,56 @@ th,
     /* ══════════════════════════════════════════════════════════════
        RESPONSIVE
     ══════════════════════════════════════════════════════════════ */
+    /* ── RESPONSIVE ────────────────────────────────────────────────── */
+
+    /* Tablets / small laptops (≤1024px) */
+    @media (max-width: 1024px) {
+      .layout { padding: 0 16px 60px; }
+      .query-panel-wrap { max-width: 100%; }
+    }
+
+    /* Mobile landscape / large phones (≤860px) — header already handled above */
+    @media (max-width: 860px) {
+      .hdr-btn { padding: 5px 9px; font-size: .5rem; letter-spacing: .08em; }
+      .stats-row { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* Phones (≤700px) */
     @media (max-width: 700px) {
       .logo-top      { font-size: 1.1rem; }
-      .stats-row     { grid-template-columns: repeat(2,1fr); }
+      .logo-sub      { display: none; }           /* reclaim header space */
+      .stats-row     { grid-template-columns: repeat(2, 1fr); }
       .form-grid     { grid-template-columns: 1fr; }
       .toolbar       { gap: 6px; }
+      .toolbar .btn:not(#colToggleBtn):not(#exportBtn) { flex-shrink: 0; }
       #bg-grid       { display: none; }
       .storage-card  { gap: 8px; }
       .storage-track { min-width: 80px; }
       .export-dropdown { right: 0; left: auto; }
+      /* Table footer stacks vertically */
+      .footer-bar {
+        flex-direction: column; align-items: flex-start; gap: 10px;
+      }
+      /* Toast fits screen width */
+      .toast-stack { right: 10px; left: 10px; }
+      .toast { font-size: .65rem; padding: 9px 12px; }
+      /* Modal body padding shrinks */
+      .modal-body { padding: 14px; }
+      .modal-footer { padding: 10px 14px; }
+      /* Query box padding */
+      .query-box { padding: 14px; }
+      .query-snippets { gap: 4px; }
+      .snippet-btn { font-size: .56rem; padding: 3px 8px; }
+    }
+
+    /* Very small phones (≤420px) */
+    @media (max-width: 420px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .hdr-btn   { display: none; }               /* hide text buttons; keep only logout */
+      #logoutBtn { display: flex !important; }    /* always show logout */
+      .live-badge { font-size: .6rem; padding: 3px 7px; }
+      .tab-btn  { padding: 7px 13px; font-size: .54rem; }
+      .page-btn { padding: 3px 6px; font-size: .48rem; }
     }
     /* ══════════════════════════════════════════════════════════════
        STORAGE INDICATOR — compact inline bar
@@ -977,7 +1021,6 @@ th,
       clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
       animation: dropIn .15s ease;
     }
-    @keyframes dropIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
     .export-dropdown.open { display: block; }
     .export-option {
       display: block; width: 100%; text-align: left;
@@ -1124,7 +1167,7 @@ th,
       </div>
 
       <!-- FOOTER BAR -->
-      <div class="footer-bar">
+      <div class="footer-bar" role="navigation" aria-label="Pagination controls">
         <span>SHOWING <span class="row-count" id="rowCount">0</span> / <span id="rowTotal">0</span> RECORDS</span>
         <div class="pagination" id="pagination" role="navigation" aria-label="Table pages"></div>
         <div style="display:flex;align-items:center;gap:8px;">
@@ -1323,8 +1366,7 @@ th,
 // Keep WORKER_URL out of public repos / committed source. Use a build-time
 // env injection (e.g. __WORKER_URL__ replaced by your bundler) in production.
 const WORKER_URL = "https://snowy-fog-b0d1.23amtics322.workers.dev/";
-const BASE_URL   = new URL(WORKER_URL).origin;
-const AUTH_URL   = BASE_URL;           // base for /auth/me, /auth/logout
+const AUTH_URL   = new URL(WORKER_URL).origin; // base for /auth/me, /auth/logout
 const CACHE_BUST = () => '_=' + Date.now();
 
 // ── STATE ────────────────────────────────────────────────────────────────
@@ -2024,12 +2066,11 @@ function exportPDF() {
   if (!filteredData.length) { toast('No data to export','t-amber'); return; }
   const visCols = COLUMNS.filter(c => c.vis && !['_act','_name','geolocation','front_photo','battery','screen','connection','permission_states'].includes(c.key));
   const names  = getNames();
-  const esc2 = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const now  = new Date().toLocaleString();
   const rows = filteredData.map((r,i) => {
     const n = names[String(r.id)] || {};
-    const cells = visCols.map(c => `<td>${esc2(r[c.key]??'')}</td>`).join('');
-    const nameCell = n.name ? `<span style="color:#bf7fff;font-weight:600">${esc2(n.name)}</span>${n.note?`<br><span style="color:#6a9ab8;font-size:9px">${esc2(n.note)}</span>`:''}` : '<span style="color:#3d6478">—</span>';
+    const cells = visCols.map(c => `<td>${esc(r[c.key]??'')}</td>`).join('');
+    const nameCell = n.name ? `<span style="color:#bf7fff;font-weight:600">${esc(n.name)}</span>${n.note?`<br><span style="color:#6a9ab8;font-size:9px">${esc(n.note)}</span>`:''}` : '<span style="color:#3d6478">—</span>';
     return `<tr class="${i%2===0?'even':'odd'}"><td>${r.id}</td><td>${nameCell}</td>${cells}</tr>`;
   }).join('');
   const headers = ['ID','NAME',...visCols.map(c=>c.key.toUpperCase().replace(/_/g,' '))].map(h=>`<th>${h}</th>`).join('');
@@ -2048,7 +2089,7 @@ function exportPDF() {
   @media print{body{padding:10px} @page{margin:15mm;size:A4 landscape}}
 </style></head><body>
 <h1>◈ CAPTURES // NODE TELEMETRY</h1>
-<div class="meta">EXPORT DATE: ${esc2(now)} &nbsp;|&nbsp; RECORDS: ${filteredData.length} &nbsp;|&nbsp; SOURCE: NODE TELEMETRY DASHBOARD</div>
+<div class="meta">EXPORT DATE: ${esc(now)} &nbsp;|&nbsp; RECORDS: ${filteredData.length} &nbsp;|&nbsp; SOURCE: NODE TELEMETRY DASHBOARD</div>
 <table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>
 </body></html>`;
   // Use Blob + object URL: no document.write(), works without popup blocker.
@@ -2219,7 +2260,8 @@ function closeLightbox() {
 // ── QUERY PANEL ───────────────────────────────────────────────────────────
 function insertSnippet(sql) {
   const ed = document.getElementById('sqlEditor'); ed.value = sql; ed.focus();
-  if (sql.endsWith(' ;')) ed.setSelectionRange(sql.length-1, sql.length-1);
+  // Place cursor before trailing semicolon for placeholder snippets (e.g. 'WHERE id = ;')
+  if (sql.endsWith(' ;') || /= ;$/.test(sql)) ed.setSelectionRange(sql.length - 1, sql.length - 1);
 }
 function clearQuery() {
   document.getElementById('sqlEditor').value = '';
