@@ -114,17 +114,6 @@
             );
         }
 
-        /* ── DATA STREAMS ───────────────────────────────────────────────────── */
-        #datastreams {
-            position: fixed; inset: 0; z-index: 2; pointer-events: none; overflow: hidden;
-        }
-        .stream {
-            position: absolute; top: -100%; width: 1px;
-            background: linear-gradient(to bottom, transparent, var(--cyan-dim), transparent);
-            animation: streamFall linear infinite; opacity: .18;
-        }
-        @keyframes streamFall { from { transform: translateY(-100%); } to { transform: translateY(200vh); } }
-
         /* ── CORNER BRACKETS ────────────────────────────────────────────────── */
         .corner-bracket {
             position: fixed; width: 80px; height: 80px; z-index: 3; pointer-events: none;
@@ -175,8 +164,8 @@
             padding: clamp(24px, 4vw, 44px) clamp(20px, 4vw, 40px);
             transform-style: preserve-3d;
             /*
-             * FIX #1: --card-scale is now actually consumed here.
-             * The tilt JS reads this var and composes it with rotateX/Y.
+             * FIX #1: --card-scale is consumed here so adaptToViewport's
+             * resize/orientation scaling actually takes effect.
              * Default 1 so it has no effect until adaptToViewport sets it.
              */
             transform: scale(var(--card-scale, 1));
@@ -448,7 +437,6 @@
         @media (prefers-reduced-motion: reduce) {
             /* FIX #22: scanlines/chromatic cause flicker — hide for sensitive users */
             #scanlines, #chromatic { display: none; }
-            .stream              { animation: none; opacity: 0; }
             .corner-bracket      { animation: none; opacity: 0.4; }
             .logo-icon           { animation: none; }
             .logo-icon::before   { animation: none; }
@@ -466,7 +454,6 @@
     <!-- Overlay layers -->
     <div id="scanlines"   aria-hidden="true"></div>
     <div id="chromatic"   aria-hidden="true"></div>
-    <div id="datastreams" aria-hidden="true"></div>
 
     <!-- Corner brackets -->
     <div class="corner-bracket tl" aria-hidden="true"></div>
@@ -891,10 +878,8 @@
     /*
      * FIX #1 + #2 — Mobile orientation change card scale bug.
      * (see original inline comments for full explanation)
-     * Key change: adaptToViewport sets --card-scale which the CSS now actually
-     * reads via transform: scale(var(--card-scale, 1)) on .login-card.
-     * The tilt handler composes its rotateX/Y onto the same transform string,
-     * reading --card-scale so the scale is preserved during tilt.
+     * adaptToViewport sets --card-scale which the CSS reads via
+     * transform: scale(var(--card-scale, 1)) on .login-card.
      */
     const loginCard = document.getElementById('loginCard');
 
@@ -921,56 +906,6 @@
     // FIX #17: handle virtual keyboard appearance (mobile) which changes innerHeight
     if (typeof window.visualViewport !== 'undefined') {
         window.visualViewport.addEventListener('resize', adaptToViewport);
-    }
-
-    // ── 3D Card tilt (desktop only) ──────────────────────────────────────────
-    // FIX #2: tilt is skipped entirely on touch devices — they have no hover,
-    // and the inline transform it sets can interfere with --card-scale on rotate.
-    const isTouchDevice = () => window.matchMedia('(hover: none)').matches;
-    const MAX_TILT = 8;
-
-    // FIX #7: listen on documentElement, not document, for reliable mouseleave.
-    document.documentElement.addEventListener('mousemove', e => {
-        if (isTouchDevice() || window.innerWidth < 768) return;
-        const cx = window.innerWidth  / 2;
-        const cy = window.innerHeight / 2;
-        const dx = (e.clientX - cx) / cx;
-        const dy = (e.clientY - cy) / cy;
-        const rx = dy * -MAX_TILT;
-        const ry = dx *  MAX_TILT;
-        // FIX #1: compose tilt with --card-scale so both systems coexist
-        const sc = parseFloat(loginCard.style.getPropertyValue('--card-scale') || '1');
-        loginCard.style.transform = `scale(${sc}) rotateX(${rx}deg) rotateY(${ry}deg)`;
-        // FIX #29: clamp shadow offset to avoid huge values on ultrawide screens
-        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-        const sx = clamp(-ry * 2, -20, 20);
-        const sy = clamp(rx * 2, -20, 20);
-        loginCard.style.boxShadow = `${sx}px ${sy}px 80px rgba(0,0,0,.95), 0 0 40px rgba(0,229,255,.08), inset 0 1px 0 rgba(0,229,255,.12), inset 0 -1px 0 rgba(0,0,0,.5), ${clamp(ry * 1.5,-15,15)}px ${clamp(-rx * 1.5,-15,15)}px 30px rgba(0,229,255,.06)`;
-    });
-
-    document.documentElement.addEventListener('mouseleave', e => {
-        // FIX #7: only fire when leaving the actual viewport (relatedTarget is null)
-        if (e.relatedTarget !== null) return;
-        loginCard.style.transition = 'transform .6s cubic-bezier(.23,1,.32,1), box-shadow .6s ease';
-        const sc = parseFloat(loginCard.style.getPropertyValue('--card-scale') || '1');
-        loginCard.style.transform  = sc !== 1 ? `scale(${sc})` : '';
-        loginCard.style.boxShadow  = '';
-        setTimeout(() => { loginCard.style.transition = ''; }, 620);
-    });
-
-    loginCard.addEventListener('mouseenter', () => {
-        if (isTouchDevice()) return;
-        loginCard.style.transition = 'transform .1s ease-out, box-shadow .1s ease-out';
-    });
-
-    // ── Data streams ─────────────────────────────────────────────────────────
-    const dsContainer = document.getElementById('datastreams');
-    for (let i = 0; i < 14; i++) {
-        const s = document.createElement('div');
-        s.className = 'stream';
-        const h = 60 + Math.random() * 180;
-        s.style.cssText = `left:${Math.random() * 100}%; height:${h}px; animation-duration:${3 + Math.random() * 6}s; animation-delay:${Math.random() * 6}s;`;
-        dsContainer.appendChild(s);
     }
 
     // ── Connection status ────────────────────────────────────────────────────
