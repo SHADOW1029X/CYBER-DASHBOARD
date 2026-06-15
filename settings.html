@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CAPTURES // SETTINGS</title>
   <meta name="description" content="Capture Node Telemetry Dashboard — account settings.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://unpkg.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://snowy-fog-b0d1.23amtics322.workers.dev; frame-ancestors 'none'; base-uri 'none'; form-action 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://unpkg.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://snowy-fog-b0d1.23amtics322.workers.dev https://unpkg.com; frame-ancestors 'none'; base-uri 'none'; form-action 'none';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="DENY">
   <meta http-equiv="Referrer-Policy" content="no-referrer">
@@ -33,13 +33,11 @@
     :root {
       --bg:         #020810;
       --bg2:        #040d18;
-      --panel:      #07111e;
       --panel2:     #0a1828;
       --border:     #0d3a52;
       --border-hi:  #1a6a8a;
       --cyan:       #00e5ff;
       --cyan-dim:   #007a99;
-      --cyan-deep:  #003d4d;
       --green:      #00ff9d;
       --green-dim:  #006644;
       --amber:      #ffb300;
@@ -114,18 +112,10 @@
       60% { transform: translate(-3%, -2%); }
       80% { transform: translate(4%, 4%); }
     }
-    #bg-grid {
-      position: fixed; bottom: 0; left: 50%; z-index: 0; pointer-events: none;
-      transform: translateX(-50%) rotateX(70deg); transform-origin: center bottom;
-      width: 260vw; height: 160vh;
-      background-image: linear-gradient(rgba(0,229,255,.06) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(0,229,255,.06) 1px, transparent 1px);
-      background-size: 56px 56px; opacity: .55;
-    }
 
     /* ── LAYOUT ───────────────────────────────────────────────────── */
     :root { --layout-px: 24px; }
-    .layout { position: relative; z-index: 2; max-width: 1760px; margin: 0 auto; padding: 0 var(--layout-px) 80px; }
+    .layout { position: relative; z-index: 2; margin: 0 auto; padding: 0 var(--layout-px) 80px; }
 
     /* ── NAVBAR ───────────────────────────────────────────────────── */
     header {
@@ -212,16 +202,14 @@
     .btn-red:hover:not(:disabled)    { background: rgba(255,59,92,.08);   box-shadow: var(--glow-r); border-color: var(--red); }
     .btn-violet { color: var(--violet); border-color: var(--violet-dim); }
     .btn-violet:hover:not(:disabled) { background: rgba(191,127,255,.08); box-shadow: var(--glow-v); border-color: var(--violet); }
-    .btn-green  { color: var(--green);  border-color: var(--green-dim); }
-    .btn-green:hover:not(:disabled)  { background: rgba(0,255,157,.08);   box-shadow: var(--glow-g); border-color: var(--green); }
 
     /* ── PANEL ────────────────────────────────────────────────── */
+    .panel-wrap { filter: drop-shadow(0 0 12px rgba(0,229,255,.15)) drop-shadow(0 8px 32px rgba(0,0,0,.7)); }
     .settings-wrap { max-width: 600px; margin: 48px auto 0; position: relative; z-index: 2; }
     .panel {
       background: linear-gradient(135deg, rgba(10,24,40,.5) 0%, rgba(4,13,24,.45) 100%);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border: 1px solid var(--border-hi); border-radius: 3px;
-      box-shadow: 0 30px 80px rgba(0,0,0,.9), var(--glow-c), inset 0 1px 0 rgba(0,229,255,.1);
       clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
       overflow: hidden;
     }
@@ -335,10 +323,30 @@
     @keyframes toastIn  { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:none} }
     @keyframes toastOut { to{opacity:0;transform:translateX(24px)} }
     .t-green  { border: 1px solid var(--green);  border-left: 3px solid var(--green);  color: var(--green); }
-    .t-red    { border: 1px solid var(--red);    border-left: 3px solid var(--red);    color: var(--red); }
     .t-cyan   { border: 1px solid var(--cyan);   border-left: 3px solid var(--cyan);   color: var(--cyan); }
     .t-amber  { border: 1px solid var(--amber);  border-left: 3px solid var(--amber);  color: var(--amber); }
-    .t-violet { border: 1px solid var(--violet); border-left: 3px solid var(--violet); color: var(--violet); }
+
+
+    /* ── AUTH GATE ──────────────────────────────────────────── */
+    #gate {
+      position: fixed; inset: 0; z-index: 9000;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity .3s ease;
+    }
+    #gate.done   { opacity: 0; pointer-events: none; }
+    #gate.hidden { display: none; }
+    .gate-inner  { text-align: center; }
+    .gate-logo   {
+      font-family: var(--font-deltha); font-weight: 900;
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      color: var(--cyan); text-shadow: var(--glow-c);
+      letter-spacing: .2em; margin-bottom: 10px;
+    }
+    .gate-txt  { font-family: 'Share Tech Mono', monospace; font-size: .68rem; color: var(--text-dim); letter-spacing: .14em; margin-bottom: 20px; }
+    .gate-err  { font-family: 'Share Tech Mono', monospace; font-size: .68rem; color: var(--red); letter-spacing: .1em; margin-bottom: 14px; display: none; }
+    .gate-spin { width: 26px; height: 26px; margin: 0 auto; border: 2px solid rgba(0,229,255,.15); border-top-color: var(--cyan); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ══════════════════ RESPONSIVE ══════════════════════ */
 
@@ -409,8 +417,17 @@
 <div class="bg-layer" aria-hidden="true"></div>
 <div class="noise" aria-hidden="true"></div>
 
-<!-- BG layers: WebGL canvas + overlay handled above -->
-<div id="bg-grid" aria-hidden="true"></div>
+<!-- BG layers: WebGL canvas + overlay handled above --></div>
+
+<!-- Auth gate — covers entire page until session verified -->
+<div id="gate" role="status" aria-live="polite">
+  <div class="gate-inner">
+    <div class="gate-logo">CAPTURES</div>
+    <div class="gate-txt" id="gateTxt">VERIFYING SESSION…</div>
+    <div class="gate-err" id="gateErr"></div>
+    <div class="gate-spin" id="gateSpin"></div>
+  </div>
+</div>
 
 <div class="layout">
 
@@ -434,11 +451,12 @@
   <!-- ══════════════ SETTINGS PANEL ══════════════ -->
   <main>
   <div class="settings-wrap">
-    <div class="panel" role="region" aria-labelledby="settingsTitle">
+    <div class="panel-wrap"><div class="panel" role="region" aria-labelledby="settingsTitle">
       <div class="panel-header">
         <span class="panel-title" id="settingsTitle">⚙ CHANGE CREDENTIALS</span>
       </div>
       <div class="panel-body">
+        <fieldset id="credFieldset" disabled style="border:none;padding:0;margin:0">
         <div class="form-grid">
           <div class="cred-section-title">// VERIFY IDENTITY</div>
 
@@ -449,7 +467,7 @@
                      autocomplete="current-password" maxlength="128"
                      placeholder="Required to save any change"
                      aria-required="true" aria-describedby="credMsg">
-              <button class="pw-toggle" type="button" data-target="credCurrentPass" aria-label="Show/hide current password" tabindex="0">
+              <button class="pw-toggle" type="button" data-target="credCurrentPass" aria-label="Show/hide current password">
                 <span class="pw-icon-wrap" aria-hidden="true">
                   <span class="pw-icon-front"><svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
                   <span class="pw-icon-back"><svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span>
@@ -474,7 +492,7 @@
                      autocomplete="new-password" maxlength="128"
                      placeholder="Leave blank to keep current"
                      aria-describedby="pwStrengthLbl">
-              <button class="pw-toggle" type="button" data-target="credNewPass" aria-label="Show/hide new password" tabindex="0">
+              <button class="pw-toggle" type="button" data-target="credNewPass" aria-label="Show/hide new password">
                 <span class="pw-icon-wrap" aria-hidden="true">
                   <span class="pw-icon-front"><svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
                   <span class="pw-icon-back"><svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span>
@@ -493,7 +511,7 @@
               <input class="field-input" id="credNewPassConfirm" type="password"
                      autocomplete="new-password" maxlength="128"
                      placeholder="Repeat new password">
-              <button class="pw-toggle" type="button" data-target="credNewPassConfirm" aria-label="Show/hide confirm password" tabindex="0">
+              <button class="pw-toggle" type="button" data-target="credNewPassConfirm" aria-label="Show/hide confirm password">
                 <span class="pw-icon-wrap" aria-hidden="true">
                   <span class="pw-icon-front"><svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
                   <span class="pw-icon-back"><svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span>
@@ -505,12 +523,13 @@
           <div id="credMsg" role="alert" aria-live="assertive"></div>
           <p class="cred-hint">// Other active sessions will be signed out automatically when credentials change.</p>
         </div>
+        </fieldset>
       </div>
       <div class="panel-footer">
-        <button class="btn btn-amber" id="credSaveBtn">◈ APPLY CHANGES</button>
+        <button class="btn btn-amber" id="credSaveBtn" disabled>◈ APPLY CHANGES</button>
         <a class="btn btn-cyan" href="dashboard.html">CANCEL</a>
       </div>
-    </div>
+    </div></div><!-- /.panel-wrap -->
   </div>
   </main>
 
@@ -602,19 +621,54 @@ document.getElementById('credNewPass').addEventListener('input', function () {
   lbl.style.color       = color;
 });
 
-// ── AUTH CHECK ───────────────────────────────────────────────────
+// ── AUTH GATE ────────────────────────────────────────────────────
 (async () => {
-  const ctrl = new AbortController();
-  const tid  = setTimeout(() => ctrl.abort(), 6000);
-  try {
-    const res = await fetch(`${BASE_URL}/auth/me`, { credentials: 'include', signal: ctrl.signal });
-    clearTimeout(tid);
-    if (res.ok) {
-      const data = await res.json().catch(() => ({}));
-      if (data.authenticated === true) return;
+  const gate     = document.getElementById('gate');
+  const gateTxt  = document.getElementById('gateTxt');
+  const gateErr  = document.getElementById('gateErr');
+  const gateSpin = document.getElementById('gateSpin');
+
+  const tryAuth = async () => {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 7000);
+    try {
+      const res = await fetch(`${BASE_URL}/auth/me`, { credentials: 'include', signal: ctrl.signal });
+      clearTimeout(tid);
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.authenticated === true) return true;
+      }
+      return false;   // auth failure (401, 403, or invalid payload)
+    } catch (_) {
+      clearTimeout(tid);
+      return null;    // network/timeout error — distinct from auth failure
     }
-  } catch (_) { clearTimeout(tid); }
-  window.location.replace('index.html');
+  };
+
+  const result = await tryAuth();
+
+  if (result === true) {
+    // Authenticated — reveal page and enable form
+    document.getElementById('credFieldset').disabled = false;
+    document.getElementById('credSaveBtn').disabled  = false;
+    gate.classList.add('done');
+    setTimeout(() => gate.classList.add('hidden'), 320);
+  } else if (result === null) {
+    // Network error — keep gate up, show retry (form stays locked)
+    gateTxt.textContent      = 'CONNECTION ERROR';
+    gateErr.textContent      = 'Could not reach auth server. Check your connection.';
+    gateErr.style.display    = 'block';
+    gateSpin.style.display   = 'none';
+    const retryBtn = document.createElement('button');
+    retryBtn.className       = 'btn btn-cyan';
+    retryBtn.style.marginTop = '16px';
+    retryBtn.textContent     = '↺ Retry';
+    retryBtn.onclick         = () => window.location.reload();
+    gate.querySelector('.gate-inner').appendChild(retryBtn);
+  } else {
+    // Auth failure — redirect immediately
+    window.location.replace('index.html');
+  }
 })();
 
 // ── VISIBILITY RE-CHECK ──────────────────────────────────────────
@@ -623,8 +677,12 @@ document.addEventListener('visibilitychange', () => {
   const ctrl = new AbortController();
   const tid  = setTimeout(() => ctrl.abort(), 6000);
   fetch(`${BASE_URL}/auth/me`, { credentials: 'include', signal: ctrl.signal })
-    .then(r => { clearTimeout(tid); return (r.status === 401 || r.status === 403) ? null : r.ok ? r.json() : null; })
-    .then(d => { if (d === null || d?.authenticated !== true) window.location.replace('index.html'); })
+    .then(r => {
+      clearTimeout(tid);
+      if (r.status === 401 || r.status === 403) { window.location.replace('index.html'); return null; }
+      return r.ok ? r.json() : null;
+    })
+    .then(d => { if (d !== null && d?.authenticated !== true) window.location.replace('index.html'); })
     .catch(() => clearTimeout(tid));
 });
 
@@ -639,7 +697,8 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 // ── SAVE CREDENTIALS ─────────────────────────────────────────────
 async function saveCredentials() {
   const btn = document.getElementById('credSaveBtn');
-  if (btn.disabled) return; // already in flight — ignore duplicate Enter/click
+  if (btn.disabled) return; // already in flight or pre-auth — ignore
+  if (document.getElementById('credFieldset').disabled) return; // gate not cleared yet
 
   const currentPass    = document.getElementById('credCurrentPass').value;
   const newUser        = document.getElementById('credNewUser').value.trim();
@@ -725,9 +784,8 @@ document.querySelectorAll('.field-input').forEach(inp => {
   let camera;
   let renderer;
   let composer;
-  let bloomPass;
   let blurPass;
-  let outputPass;
+  let renderTarget;
   let floorMesh;
 
   const clock = new THREE.Clock();
@@ -755,7 +813,6 @@ document.querySelectorAll('.field-input').forEach(inp => {
     bendStartZ: -126.0,
     floorLength: 148.0,
     wallHeight: 205.0,
-    color0: "#020810",
     color1: "#ffb300",
     color2: "#00e5ff",
     color3: "#bf7fff",
@@ -808,7 +865,7 @@ document.querySelectorAll('.field-input').forEach(inp => {
     const canvas = document.querySelector("#webgl-canvas");
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
+    scene.background = new THREE.Color(0x020810);
 
     camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 1, 2000);
     camera.position.set(0, 16, 132);
@@ -825,7 +882,7 @@ document.querySelectorAll('.field-input').forEach(inp => {
     renderer.toneMapping = THREE.LinearToneMapping;
     renderer.toneMappingExposure = config.exposure;
 
-    const renderTarget = new THREE.WebGLRenderTarget(
+    renderTarget = new THREE.WebGLRenderTarget(
       window.innerWidth * config.dpr,
       window.innerHeight * config.dpr,
       {
@@ -836,7 +893,7 @@ document.querySelectorAll('.field-input').forEach(inp => {
 
     const renderScene = new RenderPass(scene, camera);
 
-    bloomPass = new UnrealBloomPass(
+    const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
       config.bloomStrength,
       config.bloomRadius,
@@ -890,7 +947,7 @@ document.querySelectorAll('.field-input').forEach(inp => {
     };
 
     blurPass = new ShaderPass(blurShader);
-    outputPass = new OutputPass();
+    const outputPass = new OutputPass();
 
     composer = new EffectComposer(renderer, renderTarget);
     composer.setPixelRatio(config.dpr);
@@ -1145,6 +1202,8 @@ document.querySelectorAll('.field-input').forEach(inp => {
 
     composer.setPixelRatio(config.dpr);
     composer.setSize(window.innerWidth, window.innerHeight);
+
+    renderTarget.setSize(window.innerWidth * config.dpr, window.innerHeight * config.dpr);
 
     blurPass.uniforms.resolution.value.set(
       window.innerWidth * config.dpr,
