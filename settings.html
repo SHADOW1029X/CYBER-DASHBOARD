@@ -329,7 +329,7 @@
 
     /* ── AUTH GATE ──────────────────────────────────────────── */
     #gate {
-      position: fixed; inset: 0; z-index: 9000;
+      position: fixed; inset: 0; z-index: 9999;
       background: var(--bg);
       display: flex; align-items: center; justify-content: center;
       transition: opacity .3s ease;
@@ -417,7 +417,7 @@
 <div class="bg-layer" aria-hidden="true"></div>
 <div class="noise" aria-hidden="true"></div>
 
-<!-- BG layers: WebGL canvas + overlay handled above --></div>
+<!-- BG layers: WebGL canvas + overlay handled above -->
 
 <!-- Auth gate — covers entire page until session verified -->
 <div id="gate" role="status" aria-live="polite">
@@ -429,7 +429,7 @@
   </div>
 </div>
 
-<div class="layout">
+<div class="layout" id="mainLayout" inert>
 
   <!-- ══════════════ NAVBAR ══════════════ -->
   <header role="banner">
@@ -443,6 +443,7 @@
     <div class="hdr-right">
       <a href="dashboard.html"      class="btn btn-cyan   hdr-btn" title="Open Dashboard"><span aria-hidden="true">⊞</span> <span class="btn-label">DASHBOARD</span></a>
       <a href="NYTHERIX-ADMIN.html" class="btn btn-violet hdr-btn" title="Open NYTHERIX Admin"><span aria-hidden="true">◈</span> <span class="btn-label">NYTHERIX ADMIN</span></a>
+      <a href="settings.html"       class="btn btn-amber  hdr-btn" title="Account settings" aria-current="page"><span aria-hidden="true">⚙</span> <span class="btn-label">SETTINGS</span></a>
       <button class="btn btn-red hdr-btn" id="logoutBtn" aria-label="Disconnect and log out"><span aria-hidden="true">⏻</span> <span class="btn-label">DISCONNECT</span></button>
     </div>
   </header>
@@ -627,6 +628,20 @@ document.getElementById('credNewPass').addEventListener('input', function () {
   const gateErr  = document.getElementById('gateErr');
   const gateSpin = document.getElementById('gateSpin');
 
+  // Trap focus inside gate while it's visible
+  gate.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    const focusable = Array.from(gate.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])'));
+    if (!focusable.length) { e.preventDefault(); return; }
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey) { if (document.activeElement === first || !gate.contains(document.activeElement)) { e.preventDefault(); last.focus(); } }
+    else { if (document.activeElement === last || !gate.contains(document.activeElement)) { e.preventDefault(); first.focus(); } }
+  });
+
+  // Move focus into gate immediately so Tab doesn't escape to layout
+  gate.setAttribute('tabindex', '-1');
+  gate.focus();
+
   const tryAuth = async () => {
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 7000);
@@ -647,7 +662,8 @@ document.getElementById('credNewPass').addEventListener('input', function () {
   const result = await tryAuth();
 
   if (result === true) {
-    // Authenticated — reveal page and enable form
+    // Authenticated — reveal page, enable form, remove inert
+    document.getElementById('mainLayout').removeAttribute('inert');
     document.getElementById('credFieldset').disabled = false;
     document.getElementById('credSaveBtn').disabled  = false;
     gate.classList.add('done');
@@ -662,7 +678,7 @@ document.getElementById('credNewPass').addEventListener('input', function () {
     retryBtn.className       = 'btn btn-cyan';
     retryBtn.style.marginTop = '16px';
     retryBtn.textContent     = '↺ Retry';
-    retryBtn.onclick         = () => window.location.reload();
+    retryBtn.addEventListener('click', () => window.location.reload());
     gate.querySelector('.gate-inner').appendChild(retryBtn);
   } else {
     // Auth failure — redirect immediately
