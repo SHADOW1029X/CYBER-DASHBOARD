@@ -32,13 +32,11 @@
     :root {
       --bg:         #020810;
       --bg2:        #040d18;
-      --panel:      #07111e;
       --panel2:     #0a1828;
       --border:     #0d3a52;
       --border-hi:  #1a6a8a;
       --cyan:       #00e5ff;
       --cyan-dim:   #007a99;
-      --cyan-deep:  #003d4d;
       --green:      #00ff9d;
       --green-dim:  #006644;
       --red:        #ff3b5c;
@@ -478,7 +476,7 @@
 
     /* ── AUTH GATE ──────────────────────────────────────── */
     #gate {
-      position: fixed; inset: 0; z-index: 9000;
+      position: fixed; inset: 0; z-index: 9999;
       background: var(--bg); display: flex; align-items: center; justify-content: center;
       transition: opacity .3s ease;
     }
@@ -510,7 +508,7 @@
 
 <!-- BG layers: WebGL canvas + overlay handled above -->
 
-<div class="layout">
+<div class="layout" id="mainLayout" inert>
 
   <!-- ════════════════════ HEADER ════════════════════ -->
   <header role="banner">
@@ -672,8 +670,9 @@ const BASE_URL        = 'https://snowy-fog-b0d1.23amtics322.workers.dev';
 const NYTHERIX_WORKER = 'https://nytherix-admin.23amtics322.workers.dev';
 
 // ── STATE ──────────────────────────────────────────────────────
-let _isLoggingOut = false;   // prevents visibilitychange re-check racing logout
-let _lastSaved    = null;    // tracks last saved {enabled, target_url} for dirty detection
+let _isLoggingOut  = false;  // prevents visibilitychange re-check racing logout
+let _lastSaved     = null;   // tracks last saved {enabled, target_url} for dirty detection
+let _authCleared   = false;  // set true once gate passes — guards saveSettings pre-auth
 
 // ── HELPERS ────────────────────────────────────────────────────
 function toast(msg, cls, dur = 3400) {
@@ -796,9 +795,22 @@ async function loadSettings() {
 
 // ── SAVE SETTINGS ──────────────────────────────────────────────
 async function saveSettings() {
+  if (!_authCleared) return; // block pre-auth invocation
   const btn    = document.getElementById('saveBtn');
   const on     = document.getElementById('proxyToggle').checked;
   const rawUrl = document.getElementById('targetUrl').value.trim();
+
+  // Client-side URL sanity check before hitting the network
+  if (rawUrl) {
+    try {
+      const parsed = new URL(rawUrl.startsWith('http') ? rawUrl : 'https://' + rawUrl);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        showAlert('proxyAlert', '⚠ URL must use http:// or https://', 'err'); return;
+      }
+    } catch (_) {
+      showAlert('proxyAlert', '⚠ Invalid URL — please enter a valid destination.', 'err'); return;
+    }
+  }
 
   btn.disabled = true;
   btn.textContent = 'Applying…';
@@ -871,7 +883,7 @@ document.getElementById('targetUrl').addEventListener('input', checkDirty);
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
     e.preventDefault();
-    saveSettings();
+    if (_authCleared) saveSettings();
   }
 });
 
@@ -916,6 +928,18 @@ document.getElementById('nukeConfirmBtn').addEventListener('click', () => { clos
   const gateErr = document.getElementById('gateErr');
   const gateSpin = document.getElementById('gateSpin');
 
+  // Trap Tab focus inside gate while it's visible
+  gate.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    const focusable = Array.from(gate.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])'));
+    if (!focusable.length) { e.preventDefault(); return; }
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey) { if (document.activeElement === first || !gate.contains(document.activeElement)) { e.preventDefault(); last.focus(); } }
+    else            { if (document.activeElement === last  || !gate.contains(document.activeElement)) { e.preventDefault(); first.focus(); } }
+  });
+  gate.setAttribute('tabindex', '-1');
+  gate.focus();
+
   const tryAuth = async () => {
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 7000);
@@ -936,9 +960,12 @@ document.getElementById('nukeConfirmBtn').addEventListener('click', () => { clos
   const result = await tryAuth();
 
   if (result === true) {
+    // Remove inert to unlock all interactive elements
+    _authCleared = true;
+    document.getElementById('mainLayout').removeAttribute('inert');
     gate.classList.add('done');
-    setTimeout(() => gate.classList.add('hidden'), 320);
-    loadSettings();
+    // Call loadSettings after gate fade completes (320ms) so toasts aren't hidden
+    setTimeout(() => { gate.classList.add('hidden'); loadSettings(); }, 320);
   } else if (result === null) {
     // network error — show retry option instead of blind redirect
     gateTxt.textContent = 'CONNECTION ERROR';
@@ -949,7 +976,7 @@ document.getElementById('nukeConfirmBtn').addEventListener('click', () => { clos
     retryBtn.className = 'btn btn-cyan';
     retryBtn.style.marginTop = '16px';
     retryBtn.textContent = 'Retry';
-    retryBtn.onclick = () => window.location.reload();
+    retryBtn.addEventListener('click', () => window.location.reload());
     gate.querySelector('.gate-inner').appendChild(retryBtn);
   } else {
     window.location.replace('index.html');
