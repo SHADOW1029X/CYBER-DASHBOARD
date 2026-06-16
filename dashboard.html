@@ -141,15 +141,6 @@ th,
       60% { transform: translate(-3%, -2%); }
       80% { transform: translate(4%, 4%); }
     }
-    /* 3D perspective grid floor */
-    #bg-grid {
-      position: fixed; bottom: 0; left: 50%; z-index: 0; pointer-events: none;
-      transform: translateX(-50%) rotateX(70deg); transform-origin: center bottom;
-      width: 260vw; height: 160vh;
-      background-image: linear-gradient(rgba(0,229,255,.06) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(0,229,255,.06) 1px, transparent 1px);
-      background-size: 56px 56px; opacity: .55;
-    }
 
     :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
@@ -990,7 +981,6 @@ th,
       .stats-row  { grid-template-columns: repeat(2, 1fr); }
       .form-grid  { grid-template-columns: 1fr; }
       .toolbar    { gap: 6px; }
-      #bg-grid    { display: none; }
       .storage-card  { gap: 8px; }
       .storage-track { min-width: 80px; }
       .export-dropdown { right: 0; left: auto; }
@@ -1132,7 +1122,6 @@ th,
 <canvas id="webgl-canvas" aria-hidden="true"></canvas>
 <div class="bg-layer" aria-hidden="true"></div>
 <div class="noise" aria-hidden="true"></div>
-<div id="bg-grid" aria-hidden="true"></div>
 
 <a href="#main-content" class="skip-link">SKIP TO CONTENT</a>
 
@@ -1160,6 +1149,7 @@ th,
       <div class="status-time" id="statusTime" aria-live="polite">—</div>
       <div class="loader" id="loader" role="status" aria-label="Loading data"></div>
       <a href="NYTHERIX-ADMIN.html" class="btn btn-violet hdr-btn" title="Open NYTHERIX Admin"><span aria-hidden="true">◈</span> <span class="btn-label">NYTHERIX ADMIN</span></a>
+      <a href="About.html" class="btn btn-cyan hdr-btn" title="About"><span aria-hidden="true">ℹ</span> <span class="btn-label">ABOUT</span></a>
       <a href="settings.html" class="btn btn-amber hdr-btn" id="settingsBtn" title="Account settings"><span aria-hidden="true">⚙</span> <span class="btn-label">SETTINGS</span></a>
       <button class="btn btn-red hdr-btn" id="logoutBtn" aria-label="Disconnect and log out"><span aria-hidden="true">⏻</span> <span class="btn-label">DISCONNECT</span></button>
     </div>
