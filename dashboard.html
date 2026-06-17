@@ -133,6 +133,7 @@
       border-radius: 2px; z-index: 99999; letter-spacing: .1em;
     }
     .skip-link:focus { left: 12px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
     /* ── LAYOUT ───────────────────────────────────────────────────── */
     .layout { position: relative; z-index: 2; max-width: 1760px; margin: 0 auto; padding: 0 var(--layout-px) 80px; }
@@ -525,9 +526,9 @@
       transition: background .08s;
     }
     tr { transition: background .08s; }
-    tr:hover td { background: rgba(0,229,255,.04); }
+    tr:hover td, tr:has(:focus-visible) td { background: rgba(0,229,255,.04); }
     tr:nth-child(even) td { background: rgba(4,13,24,.5); }
-    tr:nth-child(even):hover td { background: rgba(0,229,255,.05); }
+    tr:nth-child(even):hover td, tr:nth-child(even):has(:focus-visible) td { background: rgba(0,229,255,.05); }
     .hidden-col { display: none; }
 
     /* PHOTO */
@@ -904,6 +905,7 @@
     .toast-stack {
       position: fixed; bottom: 22px; right: 22px; z-index: 9500;
       display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+      max-height: calc(100vh - 44px); overflow: hidden;
     }
     .toast {
       background: rgba(8,20,36,.65);
@@ -1175,7 +1177,8 @@
         </div>
       </div>
 
-      <div id="error-bar" role="alert"></div>
+      <div id="error-bar" role="alert" aria-live="assertive"></div>
+      <div id="status-live" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
       <!-- TOOLBAR -->
       <div class="toolbar" role="toolbar" aria-label="Table controls">
@@ -1574,12 +1577,14 @@ function toast(msg, type = 't-cyan', dur = 2800) {
 }
 
 // ── TABS ──────────────────────────────────────────────────────────────────
+const TAB_TITLES = { records: 'Records — DASHBOARD', query: 'Query — DASHBOARD' };
 function switchTab(id) {
   document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`btn-${id}`).classList.add('active');
   document.getElementById(`btn-${id}`).setAttribute('aria-selected','true');
   document.getElementById(`tab-${id}`).classList.add('active');
+  if (TAB_TITLES[id]) document.title = TAB_TITLES[id];
 }
 
 // ── HEADER & COLUMNS ──────────────────────────────────────────────────────
@@ -1677,7 +1682,7 @@ function renderPagination() {
     b.textContent = label; b.disabled = disabled;
     b.setAttribute('aria-label', typeof page === 'number' ? `Go to page ${page}` : label);
     if (active) b.setAttribute('aria-current','page');
-    b.onclick = () => { currentPage = page; renderTable(); window.scrollTo({top:0,behavior:'smooth'}); };
+    b.onclick = () => { currentPage = page; renderTable(); document.querySelector('.table-wrap')?.scrollIntoView({behavior:'smooth', block:'start'}); };
     return b;
   };
   pg.appendChild(mkBtn('◀', currentPage-1, currentPage<=1, false));
@@ -1698,14 +1703,22 @@ function renderPagination() {
 // ── STATS ─────────────────────────────────────────────────────────────────
 function updateStats(data) {
   const names = getNames();
+  const ips = new Set();
+  let named = 0, geo = 0, photo = 0, batSum = 0, batCnt = 0;
+  for (const r of data) {
+    if (names[String(r.id)])   named++;
+    if (geoCoords(r) != null)  geo++;
+    if (r.front_photo)         photo++;
+    if (r.public_ip)           ips.add(r.public_ip);
+    const lv = battLevel(r);
+    if (lv != null)            { batSum += lv; batCnt++; }
+  }
   document.getElementById('statTotal').textContent   = data.length || '—';
-  document.getElementById('statNamed').textContent   = data.filter(r => names[String(r.id)]).length || '—';
-  document.getElementById('statGeo').textContent     = data.filter(r => geoCoords(r) != null).length || '—';
-  document.getElementById('statPhoto').textContent   = data.filter(r => r.front_photo).length || '—';
-  const ips = new Set(data.map(r => r.public_ip).filter(Boolean));
+  document.getElementById('statNamed').textContent   = named || '—';
+  document.getElementById('statGeo').textContent     = geo || '—';
+  document.getElementById('statPhoto').textContent   = photo || '—';
   document.getElementById('statIPs').textContent     = ips.size || '—';
-  const bats = data.map(r => battLevel(r)).filter(v => v != null);
-  document.getElementById('statBattery').textContent = bats.length ? Math.round(bats.reduce((a,b)=>a+b,0)/bats.length*100)+'%' : '—';
+  document.getElementById('statBattery').textContent = batCnt ? Math.round(batSum / batCnt * 100) + '%' : '—';
   updateStorage(data);
 }
 
@@ -1740,11 +1753,12 @@ function applyFilter() {
   doSort(filteredData); currentPage = 1; renderTable();
 }
 function clearSearch() {
+  clearTimeout(searchDebounce);
   document.getElementById('searchInput').value = '';
   applyFilter(); document.getElementById('searchInput').focus();
 }
 document.getElementById('searchInput').addEventListener('input', () => {
-  clearTimeout(searchDebounce); searchDebounce = setTimeout(applyFilter, 240);
+  clearTimeout(searchDebounce); searchDebounce = setTimeout(applyFilter, 300);
 });
 
 // ── AUTO-REFRESH ──────────────────────────────────────────────────────────
@@ -1800,6 +1814,7 @@ async function loadData() {
     applyFilter();
     updateStats(allData);
     statusTime.textContent = `SYNC ${new Date().toLocaleTimeString()}`;
+    const sl = document.getElementById('status-live'); if (sl) sl.textContent = `Data refreshed. ${allData.length} records loaded.`;
     refreshBackoff = REFRESH_INTERVAL_MIN;  // reset backoff on success
     startCountdown(REFRESH_INTERVAL_MIN);
   } catch (err) {
@@ -1807,6 +1822,7 @@ async function loadData() {
     const msg = err.name === 'AbortError' ? 'Request timed out (15s)' : err.message;
     errorBar.textContent = `⚠ ${msg}`; errorBar.style.display = 'block';
     statusTime.textContent = 'SYNC FAILED';
+    const slErr = document.getElementById('status-live'); if (slErr) slErr.textContent = 'Data refresh failed. ' + msg;
     // Exponential backoff: 30 → 60 → 120 → 240 → 300 max
     refreshBackoff = Math.min(refreshBackoff * 2, REFRESH_INTERVAL_MAX);
     startCountdown(refreshBackoff);
@@ -1834,7 +1850,6 @@ function confirmDelete(ids) {
   warn.append(irr, '.');
   document.getElementById('deleteConfirmBtn').onclick = executeDelete;
   openModal('deleteModal');
-  setTimeout(() => document.getElementById('deleteConfirmBtn').focus(), 50);
 }
 async function executeDelete() {
   closeModal('deleteModal');
@@ -2036,10 +2051,15 @@ function removeNameModal() {
   toast(`Name removed from #${id}`, 't-amber');
 }
 
-// ── EXPORT CSV ────────────────────────────────────────────────────────────
-function exportCSV() {
+// ── EXPORT HELPERS ───────────────────────────────────────────────────────
+function closeExportDropdown() {
   document.getElementById('exportDropdown').classList.remove('open');
   document.getElementById('exportBtn').setAttribute('aria-expanded','false');
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────────────
+function exportCSV() {
+  closeExportDropdown();
   if (!filteredData.length) { toast('No data to export','t-amber'); return; }
   const visCols = COLUMNS.filter(c => c.vis && !['_act','_name','geolocation','front_photo','battery','screen','connection','permission_states'].includes(c.key));
   const names = getNames();
@@ -2053,9 +2073,11 @@ function exportCSV() {
   toast(`✓ ${filteredData.length} rows exported`, 't-green');
 }
 function dlFile(content, name, mime) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content],{type:mime}));
-  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+  const a   = document.createElement('a');
+  const url = URL.createObjectURL(new Blob([content], {type: mime}));
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100); // defer revoke so browser can start download
 }
 
 // ── EXPORT DROPDOWN ───────────────────────────────────────────────────────
@@ -2076,8 +2098,7 @@ document.addEventListener('click', e => {
 
 // ── EXPORT TXT ────────────────────────────────────────────────────────────
 function exportTXT() {
-  document.getElementById('exportDropdown').classList.remove('open');
-  document.getElementById('exportBtn').setAttribute('aria-expanded','false');
+  closeExportDropdown();
   if (!filteredData.length) { toast('No data to export','t-amber'); return; }
   const visCols = COLUMNS.filter(c => c.vis && !['_act','_name','geolocation','front_photo','battery','screen','connection','permission_states'].includes(c.key));
   const names = getNames();
@@ -2107,8 +2128,7 @@ function exportTXT() {
 
 // ── EXPORT PDF ────────────────────────────────────────────────────────────
 function exportPDF() {
-  document.getElementById('exportDropdown').classList.remove('open');
-  document.getElementById('exportBtn').setAttribute('aria-expanded','false');
+  closeExportDropdown();
   if (!filteredData.length) { toast('No data to export','t-amber'); return; }
   const visCols = COLUMNS.filter(c => c.vis && !['_act','_name','geolocation','front_photo','battery','screen','connection','permission_states'].includes(c.key));
   const names  = getNames();
@@ -2160,10 +2180,10 @@ function exportPDF() {
 const STORAGE_QUOTA_BYTES = 500 * 1024 * 1024; // 500 MB estimated quota
 
 function fmtBytes(b) {
-  if (b < 1024)       return b + ' B';
-  if (b < 1048576)    return (b/1024).toFixed(1) + ' KB';
-  if (b < 1073741824) return (b/1048576).toFixed(2) + ' MB';
-  return (b/1073741824).toFixed(2) + ' GB';
+  const units = [' B',' KB',' MB',' GB'];
+  let i = 0;
+  while (b >= 1024 && i < units.length - 1) { b /= 1024; i++; }
+  return (i === 0 ? b : b.toFixed(i === 1 ? 1 : 2)) + units[i];
 }
 
 function updateStorage(data) {
@@ -2248,17 +2268,21 @@ document.getElementById('tableBody').addEventListener('click', e => {
 // ── MODALS ────────────────────────────────────────────────────────────────
 const FOCUSABLE = 'button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
+const _modalTriggers = new Map(); // id → element that opened the modal
 function openModal(id) {
   const el = document.getElementById(id); if (!el) return;
+  _modalTriggers.set(id, document.activeElement);
   el.classList.add('open'); document.body.style.overflow = 'hidden';
-  // Focus first focusable element
   const first = el.querySelector(FOCUSABLE);
-  if (first) setTimeout(() => first.focus(), 30); // defer so transition starts first
+  if (first) requestAnimationFrame(() => first.focus());
 }
 
 function closeModal(id) {
   const el = document.getElementById(id); if (!el) return;
   el.classList.remove('open'); document.body.style.overflow = '';
+  const trigger = _modalTriggers.get(id);
+  if (trigger && typeof trigger.focus === 'function') trigger.focus();
+  _modalTriggers.delete(id);
 }
 
 // Focus trap: keep Tab/Shift+Tab inside open modal
@@ -2329,7 +2353,7 @@ function renderQueryHistory() {
     list.innerHTML = '<div style="padding:8px 10px;font-family:\'Share Tech Mono\',monospace;font-size:.68rem;color:var(--text-dim)">// no history</div>';
     return;
   }
-  [...queryHistory].reverse().forEach(q => {
+  queryHistory.slice().reverse().forEach(q => {
     const btn = document.createElement('button'); btn.className = 'hist-item'; btn.textContent = q;
     btn.onclick = () => { document.getElementById('sqlEditor').value = q; toggleQueryHistory(); };
     list.appendChild(btn);
