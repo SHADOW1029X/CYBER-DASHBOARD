@@ -265,6 +265,7 @@
       font-size: .58rem; font-weight: 700;
       letter-spacing: .14em; cursor: pointer;
       transition: all .2s ease; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 6px;
       clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
       overflow: hidden;
     }
@@ -291,6 +292,7 @@
     .btn-violet { color: var(--violet); border-color: var(--violet-dim); }
     .btn-violet:hover:not(:disabled) { background: rgba(191,127,255,.08); box-shadow: var(--glow-v); border-color: var(--violet); }
     .btn-sm { padding: 4px 10px; font-size: .52rem; }
+    .btn svg, .hdr-btn svg { flex-shrink: 0; }
     .hdr-btn { padding: 6px 13px; font-size: .55rem; letter-spacing: .12em; }
 
     /* ══════════════════════════════════════════════════════════════
@@ -309,6 +311,7 @@
       letter-spacing: .16em; color: var(--text-dim);
       cursor: pointer; border-radius: 3px 3px 0 0;
       transition: all .2s; position: relative; bottom: -1px;
+      display: inline-flex; align-items: center; gap: 7px;
       clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
     }
     .tab-btn:hover { color: var(--cyan); background: rgba(0,229,255,.04); }
@@ -809,7 +812,8 @@
       background: transparent; border: 1px solid transparent;
       border-radius: 2px; color: var(--text-dim);
       font-size: 1rem; cursor: pointer;
-      padding: 3px 8px; transition: all .15s; line-height: 1;
+      padding: 6px; transition: all .15s; line-height: 0;
+      display: flex; align-items: center; justify-content: center;
     }
     .modal-close:hover { color: var(--red); border-color: var(--red-dim); background: rgba(255,59,92,.06); }
     .modal-close:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
@@ -852,8 +856,8 @@
     /* ── DELETE MODAL ──────────────────────────────────────────── */
     .delete-warning { text-align: center; padding: 14px 0 6px; }
     .delete-icon {
-      font-size: 2.8rem; margin-bottom: 14px; display: block;
-      animation: deleteShake 2s ease-in-out infinite;
+      margin-bottom: 14px; display: flex; justify-content: center;
+      color: var(--red); animation: deleteShake 2s ease-in-out infinite;
     }
     @keyframes deleteShake {
       0%,100% { transform: none; }
@@ -1073,7 +1077,7 @@
     }
     .export-dropdown.open { display: block; }
     .export-option {
-      display: block; width: 100%; text-align: left;
+      display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
       padding: 9px 14px;
       font-family: 'Orbitron', monospace; font-size: .56rem; font-weight: 700;
       letter-spacing: .12em; cursor: pointer;
@@ -1084,7 +1088,6 @@
     }
     .export-option:last-child { border-bottom: none; }
     .export-option:hover { background: rgba(0,255,157,.08); color: var(--green); }
-    .export-option .exp-icon { margin-right: 7px; font-size: .75rem; }
 
   </style>
 </head>
@@ -1120,17 +1123,17 @@
       </div>
       <div class="status-time" id="statusTime" aria-live="polite">—</div>
       <div class="loader" id="loader" role="status" aria-label="Loading data"></div>
-      <a href="NYTHERIX-ADMIN.html" class="btn btn-violet hdr-btn" title="Open NYTHERIX Admin"><span aria-hidden="true">◈</span> <span class="btn-label">NYTHERIX ADMIN</span></a>
-      <a href="About.html" class="btn btn-cyan hdr-btn" title="About"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/><line x1="12" y1="12" x2="12" y2="16"/></svg> <span class="btn-label">ABOUT</span></a>
-      <a href="settings.html" class="btn btn-amber hdr-btn" id="settingsBtn" title="Account settings"><span aria-hidden="true">⚙</span> <span class="btn-label">SETTINGS</span></a>
-      <button class="btn btn-red hdr-btn" id="logoutBtn" aria-label="Disconnect and log out"><span aria-hidden="true">⏻</span> <span class="btn-label">DISCONNECT</span></button>
+      <a href="NYTHERIX-ADMIN.html" class="btn btn-violet hdr-btn" title="Open NYTHERIX Admin"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg> <span class="btn-label">NYTHERIX ADMIN</span></a>
+      <a href="About.html" class="btn btn-cyan hdr-btn" title="About"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/><line x1="12" y1="12" x2="12" y2="16"/></svg> <span class="btn-label">ABOUT</span></a>
+      <a href="settings.html" class="btn btn-amber hdr-btn" id="settingsBtn" title="Account settings"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> <span class="btn-label">SETTINGS</span></a>
+      <button class="btn btn-red hdr-btn" id="logoutBtn" aria-label="Disconnect and log out"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg> <span class="btn-label">DISCONNECT</span></button>
     </div>
   </header>
 
   <!-- ══════════════ TAB NAV ══════════════ -->
   <nav class="nav-tabs" role="tablist" aria-label="Dashboard sections">
-    <button class="tab-btn active" role="tab" aria-selected="true"  aria-controls="tab-records" id="btn-records" onclick="switchTab('records')">⊞ RECORDS</button>
-    <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-query"   id="btn-query"   onclick="switchTab('query')">⌘ QUERY</button>
+    <button class="tab-btn active" role="tab" aria-selected="true"  aria-controls="tab-records" id="btn-records" onclick="switchTab('records')"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> RECORDS</button>
+    <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-query"   id="btn-query"   onclick="switchTab('query')"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg> QUERY</button>
   </nav>
 
   <main id="main-content">
@@ -1189,22 +1192,22 @@
                  placeholder="FILTER RECORDS..."
                  aria-label="Search and filter records" autocomplete="off">
           <button class="search-clear" id="searchClearBtn" onclick="clearSearch()"
-                  aria-label="Clear search" title="Clear search">✕</button>
+                  aria-label="Clear search" title="Clear search"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg></button>
         </div>
-        <button class="btn btn-cyan" onclick="loadData()" title="Refresh data now">↺ REFRESH</button>
+        <button class="btn btn-cyan" onclick="loadData()" title="Refresh data now"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><polyline points="23,4 23,11 16,11"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 11"/></svg> REFRESH</button>
         <div class="column-toggle-wrap">
           <button class="btn btn-cyan" onclick="toggleColDropdown()" id="colToggleBtn"
-                  aria-haspopup="true" aria-expanded="false" title="Show/hide columns">⊞ COLUMNS</button>
+                  aria-haspopup="true" aria-expanded="false" title="Show/hide columns"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg> COLUMNS</button>
           <div class="col-dropdown" id="colDropdown" role="menu" aria-label="Toggle columns">
             <div class="col-dropdown-title">TOGGLE COLUMNS</div>
           </div>
         </div>
         <div class="export-wrap" id="exportWrap">
-          <button class="btn btn-green" onclick="toggleExportDropdown()" id="exportBtn" title="Export filtered data" aria-haspopup="true" aria-expanded="false">⬇ EXPORT ▾</button>
+          <button class="btn btn-green" onclick="toggleExportDropdown()" id="exportBtn" title="Export filtered data" aria-haspopup="true" aria-expanded="false"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> EXPORT</button>
           <div class="export-dropdown" id="exportDropdown" role="menu">
-            <button class="export-option" role="menuitem" onclick="exportCSV()"><span class="exp-icon">📋</span>CSV FILE</button>
-            <button class="export-option" role="menuitem" onclick="exportTXT()"><span class="exp-icon">📄</span>TEXT FILE</button>
-            <button class="export-option" role="menuitem" onclick="exportPDF()"><span class="exp-icon">📑</span>PDF FILE</button>
+            <button class="export-option" role="menuitem" onclick="exportCSV()"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>CSV FILE</button>
+            <button class="export-option" role="menuitem" onclick="exportTXT()"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="11" y2="17"/></svg>TEXT FILE</button>
+            <button class="export-option" role="menuitem" onclick="exportPDF()"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><path d="M9 15h1a1 1 0 0 0 0-2H9v4m5-4h1.5a1 1 0 0 1 0 2H14v2m4-4v4"/></svg>PDF FILE</button>
           </div>
         </div>
       </div>
@@ -1264,9 +1267,9 @@
           </div>
 
           <div class="sql-toolbar">
-            <button class="btn btn-amber" onclick="runQuery()">▶ EXECUTE</button>
-            <button class="btn btn-cyan btn-sm" onclick="clearQuery()">✕ CLEAR</button>
-            <button class="sql-hist-btn" onclick="toggleQueryHistory()" id="histBtn" aria-expanded="false">HISTORY ▾</button>
+            <button class="btn btn-amber" onclick="runQuery()"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><polygon points="5,3 19,12 5,21"/></svg> EXECUTE</button>
+            <button class="btn btn-cyan btn-sm" onclick="clearQuery()"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> CLEAR</button>
+            <button class="sql-hist-btn" onclick="toggleQueryHistory()" id="histBtn" aria-expanded="false" style="display:inline-flex;align-items:center;gap:6px;"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg> HISTORY</button>
             <span style="font-family:'Share Tech Mono',monospace;font-size:.64rem;color:var(--text-dim);margin-left:auto;"
                   id="queryStatus" aria-live="polite"></span>
           </div>
@@ -1309,12 +1312,12 @@
   <div class="modal">
     <div class="modal-header">
       <span class="modal-title" id="editModalTitle">◈ EDIT RECORD</span>
-      <button class="modal-close" onclick="closeModal('editModal')" aria-label="Close">✕</button>
+      <button class="modal-close" onclick="closeModal('editModal')" aria-label="Close"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body"><div class="form-grid" id="editFormGrid"></div></div>
     <div class="modal-footer">
-      <button class="btn btn-cyan" onclick="saveEdit()">✓ SAVE</button>
-      <button class="btn btn-red"  onclick="closeModal('editModal')">✕ CANCEL</button>
+      <button class="btn btn-cyan" onclick="saveEdit()"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13"/><polyline points="7,3 7,8 15,8"/></svg> SAVE</button>
+      <button class="btn btn-red"  onclick="closeModal('editModal')"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> CANCEL</button>
     </div>
   </div>
 </div>
@@ -1324,17 +1327,17 @@
   <div class="modal modal-sm modal-danger">
     <div class="modal-header">
       <span class="modal-title" id="deleteModalTitle" style="color:var(--red);text-shadow:var(--glow-r)">⚠ CONFIRM DELETE</span>
-      <button class="modal-close" onclick="closeModal('deleteModal')" aria-label="Close">✕</button>
+      <button class="modal-close" onclick="closeModal('deleteModal')" aria-label="Close"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
       <div class="delete-warning">
-        <span class="delete-icon">⛌</span>
+        <span class="delete-icon"><svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><polyline points='3,6 5,6 21,6'/><path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2'/><line x1='10' y1='11' x2='10' y2='17'/><line x1='14' y1='11' x2='14' y2='17'/></svg></span>
         <p id="deleteWarningText">This action is <strong>irreversible</strong>.</p>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-red" id="deleteConfirmBtn">⛌ DELETE</button>
-      <button class="btn btn-cyan" onclick="closeModal('deleteModal')">CANCEL</button>
+      <button class="btn btn-red" id="deleteConfirmBtn"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> DELETE</button>
+      <button class="btn btn-cyan" onclick="closeModal('deleteModal')"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> CANCEL</button>
     </div>
   </div>
 </div>
@@ -1344,7 +1347,7 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <span class="modal-title" id="nameModalTitle" style="color:var(--violet);text-shadow:var(--glow-v)">◈ NAME RECORD</span>
-      <button class="modal-close" onclick="closeModal('nameModal')" aria-label="Close">✕</button>
+      <button class="modal-close" onclick="closeModal('nameModal')" aria-label="Close"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
       <div class="form-grid single">
@@ -1363,9 +1366,9 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-violet" onclick="saveNameModal()">◈ ASSIGN</button>
-      <button class="btn btn-red btn-sm" onclick="removeNameModal()">⛌ REMOVE</button>
-      <button class="btn btn-cyan" onclick="closeModal('nameModal')">CANCEL</button>
+      <button class="btn btn-violet" onclick="saveNameModal()"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ASSIGN</button>
+      <button class="btn btn-red btn-sm" onclick="removeNameModal()"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg> REMOVE</button>
+      <button class="btn btn-cyan" onclick="closeModal('nameModal')"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> CANCEL</button>
     </div>
   </div>
 </div>
@@ -1519,8 +1522,8 @@ const COLUMNS = [
   { key: 'session_id',           label: 'SESSION',   vis: false, sort: true,  render: r => fmtM(r.session_id) },
   { key: '_act',                 label: 'ACTIONS',   vis: true,  sort: false, render: () => `
     <div class="row-actions">
-      <button class="btn btn-cyan btn-sm" data-action="edit"   title="Edit record">✎ EDIT</button>
-      <button class="btn btn-red btn-sm"  data-action="delete" title="Delete record">⛌ DEL</button>
+      <button class="btn btn-cyan btn-sm" data-action="edit"   title="Edit record"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> EDIT</button>
+      <button class="btn btn-red btn-sm"  data-action="delete" title="Delete record"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> DEL</button>
     </div>` }
 ];
 
