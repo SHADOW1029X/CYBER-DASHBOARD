@@ -3,1166 +3,1020 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Nytherionx — Cosmic darkness that rewrites future beneath neon stars.</title>
+  <title>NYTHERION — Cyber Captures · About</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,500;1,600&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     :root {
-      --void: #050508;
-      --indigo: #0D0B1A;
-      --violet: #7B5CF0;
-      --violet-dim: #4A368F;
-      --star: #F4F2FF;
-      --muted: #8A87A0;
-      --border: rgba(123,92,240,0.18);
+      --void: #020810;
+      --deep: #050d1a;
+      --panel: rgba(0,18,40,0.72);
+      --cyan: #00e5ff;
+      --cyan-dim: rgba(0,229,255,0.15);
+      --cyan-border: rgba(0,229,255,0.25);
+      --green: #00ff9d;
+      --amber: #ffb300;
+      --violet: #7b5cf0;
+      --violet-dim: rgba(123,92,240,0.15);
+      --red: #ff3b5c;
+      --star: #e8f4ff;
+      --muted: #6a8aaa;
+      --grid: rgba(0,229,255,0.04);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'Rajdhani',sans-serif;background:var(--void);color:var(--star);overflow-x:hidden;}
+    .font-orbitron{font-family:'Orbitron',monospace;}
+    .font-mono{font-family:'Share Tech Mono',monospace;}
+
+    /* scrollbar */
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-track{background:var(--void);}
+    ::-webkit-scrollbar-thumb{background:rgba(0,229,255,0.3);border-radius:2px;}
+
+    /* GRID BG */
+    body::before{
+      content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+      background-image:
+        linear-gradient(var(--grid) 1px,transparent 1px),
+        linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+      background-size:48px 48px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'Space Grotesk', sans-serif;
-      background: var(--void);
-      color: var(--star);
-      overflow-x: hidden;
-    }
-
-    .font-playfair { font-family: 'Playfair Display', serif; }
-    .font-inter { font-family: 'Inter', sans-serif; }
-    .font-mono { font-family: 'JetBrains Mono', monospace; }
-
-    /* ── PARTICLES ── */
-    #particle-canvas {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1;
-    }
+    /* PARTICLES */
+    #particle-canvas{position:fixed;inset:0;pointer-events:none;z-index:1;}
 
     /* ── NAV ── */
-    nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 200;
-      padding: 0 clamp(1.25rem, 4vw, 3.5rem);
-      height: 68px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: background 0.4s, backdrop-filter 0.4s, border-color 0.4s;
+    nav{
+      position:fixed;top:0;left:0;right:0;z-index:300;
+      height:64px;display:flex;align-items:center;justify-content:space-between;
+      padding:0 clamp(1rem,4vw,3rem);
+      background:rgba(2,8,16,0.0);
+      border-bottom:1px solid transparent;
+      transition:background .4s,border-color .4s,backdrop-filter .4s;
     }
-    nav.scrolled {
-      background: rgba(5,5,8,0.75);
-      backdrop-filter: blur(16px);
-      border-bottom: 0.5px solid var(--border);
+    nav.scrolled{
+      background:rgba(2,8,16,0.88);
+      backdrop-filter:blur(18px);
+      border-bottom-color:var(--cyan-border);
     }
-    .nav-logo {
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-size: 1.5rem;
-      color: var(--star);
-      letter-spacing: -0.02em;
+    .nav-logo{
+      font-family:'Orbitron',monospace;font-size:.95rem;font-weight:700;
+      color:var(--cyan);letter-spacing:.12em;text-transform:uppercase;
+      text-shadow:0 0 18px rgba(0,229,255,.5);
+      display:flex;align-items:center;gap:10px;
     }
-    .nav-pill {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      background: rgba(255,255,255,0.07);
-      backdrop-filter: blur(12px);
-      border: 0.5px solid rgba(255,255,255,0.15);
-      border-radius: 100px;
-      padding: 4px;
+    .nav-logo-dot{
+      width:8px;height:8px;border-radius:50%;background:var(--cyan);
+      animation:pulse-dot 2s ease-in-out infinite;
+      box-shadow:0 0 8px var(--cyan);
     }
-    .nav-pill button {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: rgba(244,242,255,0.6);
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.8125rem;
-      font-weight: 500;
-      padding: 7px 16px;
-      border-radius: 100px;
-      transition: color 0.2s, background 0.2s;
-      white-space: nowrap;
-    }
-    .nav-pill button:hover { color: var(--star); background: rgba(255,255,255,0.1); }
-    .nav-pill button.active { background: white; color: #0D0B1A; }
+    @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.7);}}
 
-    /* Mobile nav */
-    .hamburger {
-      display: none;
-      flex-direction: column;
-      gap: 5px;
-      cursor: pointer;
-      padding: 8px;
-      background: rgba(255,255,255,0.07);
-      border: 0.5px solid rgba(255,255,255,0.15);
-      border-radius: 10px;
+    .nav-links{display:flex;align-items:center;gap:2px;}
+    .nav-link{
+      font-family:'Rajdhani',sans-serif;font-size:.875rem;font-weight:600;
+      letter-spacing:.08em;text-transform:uppercase;
+      color:var(--muted);background:none;border:none;cursor:pointer;
+      padding:7px 14px;border-radius:4px;
+      position:relative;transition:color .2s;
+      text-decoration:none;display:inline-block;
     }
-    .hamburger span {
-      display: block;
-      width: 20px; height: 1.5px;
-      background: var(--star);
-      transition: transform 0.3s, opacity 0.3s;
-      transform-origin: center;
+    .nav-link::after{
+      content:'';position:absolute;bottom:4px;left:14px;right:14px;height:1px;
+      background:var(--cyan);transform:scaleX(0);transition:transform .25s;
     }
-    .hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
-    .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-    .hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+    .nav-link:hover{color:var(--star);}
+    .nav-link:hover::after,.nav-link.active::after{transform:scaleX(1);}
+    .nav-link.active{color:var(--cyan);}
 
-    .mobile-menu {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      z-index: 150;
-      background: rgba(5,5,8,0.97);
-      backdrop-filter: blur(24px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.35s;
-    }
-    .mobile-menu.open { opacity: 1; pointer-events: auto; }
-    .mobile-menu button {
-      background: none; border: none; cursor: pointer;
-      color: var(--muted);
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: clamp(1.5rem, 6vw, 2rem);
-      font-weight: 500;
-      padding: 10px 32px;
-      border-radius: 12px;
-      transition: color 0.2s, background 0.2s;
-    }
-    .mobile-menu button:hover { color: var(--star); background: rgba(123,92,240,0.12); }
-    .mobile-menu button.active { color: var(--star); }
+    /* hamburger */
+    .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;
+      padding:8px;background:rgba(0,229,255,.07);border:1px solid var(--cyan-border);border-radius:6px;}
+    .hamburger span{display:block;width:20px;height:1.5px;background:var(--cyan);transition:transform .3s,opacity .3s;transform-origin:center;}
+    .hamburger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg);}
+    .hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+    .hamburger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);}
 
-    @media (max-width: 767px) {
-      .nav-pill { display: none; }
-      .hamburger { display: flex; }
+    .mobile-menu{
+      position:fixed;inset:0;z-index:200;
+      background:rgba(2,8,16,.97);backdrop-filter:blur(24px);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+      opacity:0;pointer-events:none;transition:opacity .35s;
+    }
+    .mobile-menu.open{opacity:1;pointer-events:auto;}
+    .mobile-menu a{
+      font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:700;
+      letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+      text-decoration:none;padding:12px 40px;border-radius:6px;
+      border:1px solid transparent;transition:color .2s,border-color .2s,background .2s;
+    }
+    .mobile-menu a:hover{color:var(--cyan);border-color:var(--cyan-border);background:var(--cyan-dim);}
+
+    @media(max-width:767px){.nav-links{display:none;}.hamburger{display:flex;}}
+
+    /* ── SHARED SECTION ── */
+    section{position:relative;z-index:2;}
+    .section-inner{max-width:1160px;margin:0 auto;padding:clamp(4.5rem,9vw,7rem) clamp(1.25rem,5vw,3rem);}
+
+    /* section label */
+    .sec-label{
+      font-family:'Share Tech Mono',monospace;font-size:.75rem;
+      letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);
+      margin-bottom:1rem;display:flex;align-items:center;gap:8px;
+    }
+    .sec-label::before{content:'//';color:var(--muted);}
+
+    /* section heading */
+    .sec-heading{
+      font-family:'Orbitron',monospace;
+      font-size:clamp(1.5rem,3.5vw,2.5rem);
+      font-weight:700;color:var(--star);
+      letter-spacing:-.01em;line-height:1.15;
+      margin-bottom:clamp(2.5rem,5vw,4rem);
+    }
+    .sec-heading span{color:var(--cyan);}
+
+    /* divider */
+    .cyber-divider{
+      width:100%;height:1px;
+      background:linear-gradient(90deg,transparent,var(--cyan-border),transparent);
     }
 
-    /* ── HERO ── */
-    .hero {
-      position: relative;
-      width: 100%;
-      height: 100dvh;
-      min-height: 600px;
-      overflow: hidden;
-      background: var(--void);
-      z-index: 2;
+    /* ── HERO / SPOTLIGHT ── */
+    .hero{
+      position:relative;width:100%;height:100dvh;min-height:620px;
+      overflow:hidden;background:var(--void);z-index:2;
     }
-    .hero-bg-base {
-      position: absolute;
-      inset: 0;
-      background: url('visible.png') center/cover no-repeat;
-      z-index: 10;
+    .hero-bg-base{
+      position:absolute;inset:0;
+      background:url('visible.png') center/cover no-repeat;
+      z-index:10;animation:kenBurns 2.4s cubic-bezier(.16,1,.3,1) forwards;
     }
-    .hero-bg-reveal {
-      position: absolute;
-      inset: 0;
-      background: url('hidden.png') center/cover no-repeat;
-      z-index: 30;
-      pointer-events: none;
+    .hero-bg-reveal{
+      position:absolute;inset:0;
+      background:url('hidden.png') center/cover no-repeat;
+      z-index:30;pointer-events:none;
     }
-    #spotlightCanvas { display: none; }
-
-    /* Hero vignette for text legibility */
-    .hero-vignette {
-      position: absolute;
-      inset: 0;
-      z-index: 40;
-      pointer-events: none;
+    #spotlightCanvas{display:none;}
+    .hero-vignette{
+      position:absolute;inset:0;z-index:40;pointer-events:none;
       background:
-        radial-gradient(ellipse 80% 40% at 50% 0%, rgba(5,5,8,0.55) 0%, transparent 100%),
-        radial-gradient(ellipse 100% 50% at 50% 100%, rgba(5,5,8,0.85) 0%, transparent 100%),
-        radial-gradient(ellipse 40% 80% at 0% 50%, rgba(5,5,8,0.25) 0%, transparent 100%),
-        radial-gradient(ellipse 40% 80% at 100% 50%, rgba(5,5,8,0.25) 0%, transparent 100%);
+        radial-gradient(ellipse 80% 45% at 50% 0%,rgba(2,8,16,.6) 0%,transparent 100%),
+        radial-gradient(ellipse 100% 55% at 50% 100%,rgba(2,8,16,.92) 0%,transparent 100%),
+        radial-gradient(ellipse 35% 100% at 0% 50%,rgba(2,8,16,.3) 0%,transparent 100%),
+        radial-gradient(ellipse 35% 100% at 100% 50%,rgba(2,8,16,.3) 0%,transparent 100%);
+    }
+    .hero-content{
+      position:absolute;inset:0;z-index:50;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;padding:clamp(1rem,5vw,3rem);padding-top:80px;
+    }
+    .hero-eyebrow{
+      font-family:'Share Tech Mono',monospace;font-size:.75rem;
+      letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);
+      margin-bottom:1.5rem;
+      opacity:0;animation:fadeUp .9s .15s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    .hero-title{line-height:.9;margin-bottom:1.75rem;}
+    .hero-title .t1{
+      display:block;font-family:'Orbitron',monospace;font-weight:900;
+      font-size:clamp(2.5rem,8vw,7rem);
+      letter-spacing:-.02em;color:var(--cyan);
+      text-shadow:0 0 40px rgba(0,229,255,.3);
+      opacity:0;animation:blurReveal 1.1s .28s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    .hero-title .t2{
+      display:block;font-family:'Rajdhani',sans-serif;font-weight:600;
+      font-size:clamp(1rem,2.8vw,2rem);
+      letter-spacing:.04em;color:rgba(232,244,255,.55);
+      text-transform:uppercase;margin-top:.5rem;
+      opacity:0;animation:blurReveal 1.1s .48s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    .hero-subtitle{
+      font-size:clamp(.9rem,1.8vw,1.1rem);font-weight:400;color:var(--muted);
+      max-width:540px;line-height:1.8;margin-bottom:2.5rem;
+      opacity:0;animation:fadeUp 1s .7s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    .hero-cta-row{
+      display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;
+      opacity:0;animation:fadeUp 1s .9s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    .btn-cyan{
+      font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;
+      letter-spacing:.1em;text-transform:uppercase;
+      padding:13px 28px;border-radius:3px;cursor:pointer;
+      background:transparent;color:var(--cyan);
+      border:1px solid var(--cyan);
+      position:relative;overflow:hidden;transition:color .2s,box-shadow .2s;
+    }
+    .btn-cyan::before{
+      content:'';position:absolute;inset:0;
+      background:var(--cyan);transform:translateX(-100%);transition:transform .25s;z-index:-1;
+    }
+    .btn-cyan:hover{color:var(--void);box-shadow:0 0 24px rgba(0,229,255,.4);}
+    .btn-cyan:hover::before{transform:translateX(0);}
+    .btn-ghost-cyber{
+      font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;
+      letter-spacing:.1em;text-transform:uppercase;
+      padding:12px 24px;border-radius:3px;cursor:pointer;
+      background:transparent;color:var(--muted);
+      border:1px solid rgba(106,138,170,.3);
+      transition:color .2s,border-color .2s;
+    }
+    .btn-ghost-cyber:hover{color:var(--star);border-color:rgba(232,244,255,.35);}
+
+    /* hero hint */
+    .hero-hint{
+      position:absolute;bottom:2.25rem;left:50%;transform:translateX(-50%);
+      z-index:50;display:flex;flex-direction:column;align-items:center;gap:6px;
+      opacity:0;animation:fadeUp 1s 1.3s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    .hero-hint span{font-family:'Share Tech Mono',monospace;font-size:.625rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(0,229,255,.3);}
+    .scroll-line{width:1px;height:38px;background:linear-gradient(to bottom,var(--cyan),transparent);animation:scrollPulse 2.2s 1.5s ease-in-out infinite;}
+    .touch-hint{
+      display:none;position:absolute;bottom:5.5rem;left:50%;transform:translateX(-50%);
+      z-index:50;font-family:'Share Tech Mono',monospace;font-size:.625rem;
+      letter-spacing:.18em;text-transform:uppercase;color:rgba(0,229,255,.3);white-space:nowrap;
+    }
+    @media(pointer:coarse){.touch-hint{display:block;animation:fadeUp 1s 1.3s both;}}
+
+    /* ── HOW IT WORKS SECTION ── */
+    #how-it-works{background:var(--deep);}
+    .capability-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+      gap:1px;background:var(--cyan-border);
+      border:1px solid var(--cyan-border);border-radius:6px;overflow:hidden;
+    }
+    .cap-card{
+      background:var(--void);padding:clamp(1.5rem,3vw,2.25rem);
+      position:relative;transition:background .3s;
+    }
+    .cap-card:hover{background:rgba(0,229,255,.04);}
+    .cap-card-num{
+      font-family:'Share Tech Mono',monospace;font-size:.7rem;
+      letter-spacing:.15em;color:var(--cyan);margin-bottom:1rem;opacity:.6;
+    }
+    .cap-card-title{font-family:'Orbitron',monospace;font-size:.95rem;font-weight:700;color:var(--star);margin-bottom:.75rem;letter-spacing:.04em;}
+    .cap-card-body{font-size:.975rem;color:var(--muted);line-height:1.75;font-weight:400;}
+    .cap-card-tag{
+      display:inline-block;margin-top:1.25rem;
+      font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;
+      padding:4px 10px;border-radius:2px;
+      background:rgba(0,229,255,.08);color:var(--cyan);border:1px solid rgba(0,229,255,.2);
     }
 
-    /* Hero text */
-    .hero-content {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      z-index: 50;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: clamp(1rem, 5vw, 3rem);
-      padding-top: 80px;
+    /* data flow */
+    .dataflow{
+      margin:3rem 0;background:rgba(0,229,255,.03);border:1px solid var(--cyan-border);border-radius:6px;
+      padding:clamp(1.5rem,3vw,2.5rem);overflow-x:auto;
     }
-    .hero-eyebrow {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--violet);
-      margin-bottom: 1.5rem;
-      opacity: 0;
-      animation: fadeUp 0.9s 0.15s cubic-bezier(0.16,1,0.3,1) forwards;
+    .dataflow-label{font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:1.5rem;opacity:.7;}
+    .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;min-width:max-content;}
+    .flow-node{
+      font-family:'Share Tech Mono',monospace;font-size:.75rem;
+      padding:10px 16px;border-radius:3px;white-space:nowrap;
+      background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:var(--cyan);
     }
-    .hero-h1 {
-      line-height: 0.92;
-      color: var(--star);
-      margin-bottom: 2rem;
-    }
-    .hero-h1 .line1 {
-      display: block;
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-weight: 400;
-      font-size: clamp(3rem, 8.5vw, 7.5rem);
-      letter-spacing: -0.04em;
-      opacity: 0;
-      animation: blurReveal 1.1s 0.3s cubic-bezier(0.16,1,0.3,1) forwards;
-    }
-    .hero-h1 .line2 {
-      display: block;
-      font-weight: 400;
-      font-size: clamp(1.6rem, 4.2vw, 3.75rem);
-      letter-spacing: -0.05em;
-      color: rgba(244,242,255,0.72);
-      opacity: 0;
-      animation: blurReveal 1.1s 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
-    }
-    .hero-desc {
-      max-width: 480px;
-      font-size: clamp(0.875rem, 2vw, 1rem);
-      font-weight: 400;
-      color: var(--muted);
-      line-height: 1.75;
-      margin-bottom: 2.5rem;
-      opacity: 0;
-      animation: fadeUp 1s 0.7s cubic-bezier(0.16,1,0.3,1) forwards;
-    }
-    .hero-cta-row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: center;
-      opacity: 0;
-      animation: fadeUp 1s 0.9s cubic-bezier(0.16,1,0.3,1) forwards;
-    }
-    .btn-primary {
-      background: var(--violet);
-      color: #fff;
-      border: none;
-      padding: 13px 28px;
-      border-radius: 100px;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-      letter-spacing: -0.01em;
-    }
-    .btn-primary:hover {
-      background: #6345d4;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 28px rgba(123,92,240,0.38);
-    }
-    .btn-primary:active { transform: translateY(0); }
-    .btn-ghost {
-      background: transparent;
-      color: var(--muted);
-      border: 0.5px solid rgba(255,255,255,0.18);
-      padding: 12px 24px;
-      border-radius: 100px;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: color 0.2s, border-color 0.2s;
-    }
-    .btn-ghost:hover { color: var(--star); border-color: rgba(255,255,255,0.38); }
+    .flow-arrow{font-family:'Share Tech Mono',monospace;color:var(--cyan);opacity:.5;padding:0 10px;font-size:.9rem;}
 
-    /* Scroll indicator */
-    .scroll-hint {
-      position: absolute;
-      bottom: 2.25rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 50;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      opacity: 0;
-      animation: fadeUp 1s 1.3s cubic-bezier(0.16,1,0.3,1) forwards;
+    /* use-cases */
+    .usecase-list{display:flex;flex-direction:column;gap:16px;margin-top:3rem;}
+    .usecase-item{
+      display:grid;grid-template-columns:auto 1fr;gap:1rem;
+      padding:clamp(1.25rem,2.5vw,1.75rem);
+      background:var(--panel);border:1px solid var(--cyan-border);border-radius:4px;
+      border-left:3px solid var(--cyan);
+      transition:border-left-color .2s,background .2s;
     }
-    .scroll-hint span {
-      font-size: 0.625rem;
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: rgba(244,242,255,0.3);
+    .usecase-item:hover{background:rgba(0,229,255,.06);border-left-color:var(--green);}
+    .usecase-num{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;color:var(--cyan);opacity:.4;min-width:2rem;}
+    .usecase-title{font-family:'Orbitron',monospace;font-size:.875rem;font-weight:700;color:var(--star);letter-spacing:.04em;margin-bottom:.5rem;}
+    .usecase-body{font-size:.975rem;color:var(--muted);line-height:1.75;}
+
+    /* ── PAGES SECTION ── */
+    #pages{background:var(--void);}
+    .pages-nav{
+      display:flex;flex-wrap:wrap;gap:8px;margin-bottom:3rem;
     }
-    .scroll-line {
-      width: 1px;
-      height: 40px;
-      background: linear-gradient(to bottom, rgba(123,92,240,0.6), transparent);
-      animation: scrollPulse 2.2s 1.5s ease-in-out infinite;
+    .page-tab{
+      font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+      padding:9px 18px;border-radius:3px;cursor:pointer;
+      background:transparent;color:var(--muted);border:1px solid rgba(106,138,170,.25);
+      transition:color .2s,border-color .2s,background .2s;
+    }
+    .page-tab:hover{color:var(--star);border-color:rgba(232,244,255,.3);}
+    .page-tab.active{color:var(--cyan);border-color:var(--cyan);background:var(--cyan-dim);}
+
+    .page-panel{display:none;}
+    .page-panel.active{display:block;}
+
+    /* page card */
+    .page-hero-bar{
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
+      padding:clamp(1.5rem,3vw,2rem) clamp(1.5rem,3vw,2.25rem);
+      background:linear-gradient(135deg,rgba(0,229,255,.06),rgba(0,229,255,.02));
+      border:1px solid var(--cyan-border);border-radius:6px;margin-bottom:2rem;
+    }
+    .page-name{font-family:'Orbitron',monospace;font-size:clamp(1rem,2.5vw,1.5rem);font-weight:900;color:var(--cyan);letter-spacing:.06em;}
+    .page-badge{
+      font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;
+      padding:6px 14px;border-radius:2px;
+      background:rgba(0,255,157,.1);color:var(--green);border:1px solid rgba(0,255,157,.25);
+    }
+    .page-overview{font-size:1rem;color:var(--muted);line-height:1.85;margin-bottom:2.5rem;font-weight:400;}
+    .features-grid{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:16px;margin-bottom:2.5rem;
+    }
+    .feat-card{
+      background:var(--panel);border:1px solid var(--cyan-border);border-radius:4px;
+      padding:1.25rem 1.5rem;transition:background .2s,border-color .2s;
+    }
+    .feat-card:hover{background:rgba(0,229,255,.06);border-color:rgba(0,229,255,.4);}
+    .feat-icon{width:36px;height:36px;border-radius:4px;
+      background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);
+      display:flex;align-items:center;justify-content:center;margin-bottom:1rem;}
+    .feat-icon svg{width:18px;height:18px;stroke:var(--cyan);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+    .feat-title{font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;color:var(--star);letter-spacing:.04em;margin-bottom:.5rem;}
+    .feat-body{font-size:.9rem;color:var(--muted);line-height:1.7;}
+
+    /* tech stack */
+    .tech-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:2rem;}
+    .tech-tag{
+      font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+      padding:5px 12px;border-radius:2px;
+      background:var(--violet-dim);color:rgba(123,92,240,.9);border:1px solid rgba(123,92,240,.25);
     }
 
-    /* Touch hint (mobile only) */
-    .touch-hint {
-      display: none;
-      position: absolute;
-      bottom: 5.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 50;
-      font-size: 0.6875rem;
-      font-weight: 500;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: rgba(244,242,255,0.3);
-      white-space: nowrap;
+    /* workflow */
+    .workflow{margin:2rem 0;}
+    .workflow-title{font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--star);margin-bottom:1.25rem;opacity:.7;}
+    .workflow-steps{display:flex;flex-direction:column;gap:0;}
+    .wf-step{
+      display:flex;align-items:flex-start;gap:1rem;
+      padding:.875rem 0;border-bottom:1px solid rgba(0,229,255,.07);
     }
-    @media (pointer: coarse) {
-      .touch-hint { display: block; animation: fadeUp 1s 1.3s cubic-bezier(0.16,1,0.3,1) both; }
+    .wf-step:last-child{border-bottom:none;}
+    .wf-num{
+      font-family:'Share Tech Mono',monospace;font-size:.7rem;
+      width:28px;height:28px;border-radius:50%;flex-shrink:0;
+      background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);
+      display:flex;align-items:center;justify-content:center;color:var(--cyan);margin-top:2px;
     }
+    .wf-text{font-size:.95rem;color:var(--muted);line-height:1.65;}
 
-    /* ── KEYFRAMES ── */
-    @keyframes blurReveal {
-      from { opacity: 0; transform: translateY(24px); filter: blur(12px); }
-      to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+    /* ── STATS ROW ── */
+    .stats-row{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:1px;background:var(--cyan-border);
+      border:1px solid var(--cyan-border);border-radius:6px;overflow:hidden;
+      margin-top:4rem;
     }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes scrollPulse {
-      0%, 100% { opacity: 0.3; transform: scaleY(0.8) translateY(-4px); }
-      50%       { opacity: 0.8; transform: scaleY(1)   translateY(4px); }
-    }
-    @keyframes kenBurns {
-      from { transform: scale(1.12); }
-      to   { transform: scale(1); }
-    }
-    .ken-burns {
-      animation: kenBurns 2.2s cubic-bezier(0.16,1,0.3,1) forwards;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0.01ms !important; }
-    }
-
-    /* ── SECTION BASE ── */
-    section { position: relative; z-index: 2; }
-    .section-inner {
-      max-width: 1120px;
-      margin: 0 auto;
-      padding: clamp(5rem, 10vw, 8rem) clamp(1.25rem, 5vw, 3.5rem);
-    }
-
-    /* ── MANIFESTO ── */
-    .manifesto { background: var(--indigo); border-top: 0.5px solid var(--border); border-bottom: 0.5px solid var(--border); }
-    .manifesto-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: clamp(2rem, 6vw, 5rem);
-      align-items: start;
-    }
-    @media (max-width: 680px) { .manifesto-grid { grid-template-columns: 1fr; } }
-    .manifesto-label {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--violet);
-      margin-bottom: 1.25rem;
-    }
-    .manifesto-heading {
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-size: clamp(2rem, 4vw, 3.25rem);
-      font-weight: 400;
-      color: var(--star);
-      line-height: 1.1;
-      letter-spacing: -0.03em;
-    }
-    .manifesto-body {
-      font-size: 1rem;
-      color: var(--muted);
-      line-height: 1.85;
-    }
-    .manifesto-body p + p { margin-top: 1.25rem; }
-
-    /* stat row */
-    .stat-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-      margin-top: 3rem;
-      padding-top: 3rem;
-      border-top: 0.5px solid var(--border);
-    }
-    @media (max-width: 480px) { .stat-row { grid-template-columns: 1fr 1fr; } }
-    .stat-item {}
-    .stat-num {
-      font-size: clamp(1.75rem, 4vw, 2.5rem);
-      font-weight: 600;
-      color: var(--star);
-      letter-spacing: -0.04em;
-      line-height: 1;
-    }
-    .stat-num span { color: var(--violet); }
-    .stat-label {
-      margin-top: 6px;
-      font-size: 0.8125rem;
-      color: var(--muted);
-      font-weight: 400;
-    }
-
-    /* ── BENEFITS GRID (from SimpleRoyal) ── */
-    .benefits {
-      background: var(--void);
-    }
-    .benefits-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1px;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      overflow: hidden;
-      background: #222;
-    }
-    @media (min-width: 768px) {
-      .benefits-grid {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-    .benefits-title-area {
-      background: #0a0a0a;
-      padding: 3rem 2rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      position: relative;
-    }
-    @media (min-width: 768px) {
-      .benefits-title-area {
-        grid-column: span 2;
-        min-height: 420px;
-      }
-    }
-    .webgl-container {
-      background: #0a0a0a;
-      position: relative;
-      overflow: hidden;
-      min-height: 420px;
-    }
-    @media (min-width: 768px) {
-      .webgl-container {
-        grid-column: span 2;
-        grid-row: span 2;
-      }
-    }
-    .benefit-card {
-      background: #0a0a0a;
-      padding: 2.5rem 2.5rem;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all 0.3s ease;
-    }
-    .benefit-card:hover {
-      background: #111;
-    }
-    .benefit-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border: 1px solid transparent;
-      transition: border-color 0.7s;
-    }
-    .benefit-card:hover::before {
-      border-color: rgba(249, 115, 22, 0.3);
-    }
-    .card-number {
-      font-size: 0.875rem;
-      color: var(--star);
-    }
-    .benefit-card h3 {
-      font-size: 1.125rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
-
-    /* ── PILLARS ── */
-    .pillars { background: var(--void); }
-    .section-label {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--violet);
-      margin-bottom: 1rem;
-    }
-    .section-heading {
-      font-size: clamp(1.75rem, 3.5vw, 2.75rem);
-      font-weight: 500;
-      color: var(--star);
-      letter-spacing: -0.04em;
-      line-height: 1.15;
-      max-width: 560px;
-      margin-bottom: 3.5rem;
-    }
-    .pillars-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1px;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      overflow: hidden;
-    }
-    .pillar-card {
-      background: rgba(13,11,26,0.6);
-      padding: clamp(1.5rem, 3.5vw, 2.5rem);
-      border: none;
-      transition: background 0.25s;
-      position: relative;
-    }
-    .pillar-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 2rem; right: 2rem;
-      height: 1px;
-      background: var(--border);
-    }
-    .pillar-card:first-child::before { display: none; }
-    .pillar-card:hover { background: rgba(123,92,240,0.07); }
-    .pillar-icon {
-      width: 44px; height: 44px;
-      border-radius: 12px;
-      background: rgba(123,92,240,0.14);
-      border: 0.5px solid rgba(123,92,240,0.3);
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 1.5rem;
-    }
-    .pillar-icon svg { width: 20px; height: 20px; stroke: var(--violet); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-    .pillar-title {
-      font-size: 1.0625rem;
-      font-weight: 600;
-      color: var(--star);
-      letter-spacing: -0.02em;
-      margin-bottom: 0.625rem;
-    }
-    .pillar-desc {
-      font-size: 0.9rem;
-      color: var(--muted);
-      line-height: 1.75;
-    }
+    .stat-box{background:var(--void);padding:clamp(1.25rem,3vw,2rem);text-align:center;}
+    .stat-val{font-family:'Orbitron',monospace;font-size:clamp(1.75rem,4vw,2.5rem);font-weight:900;color:var(--cyan);letter-spacing:-.02em;text-shadow:0 0 18px rgba(0,229,255,.3);}
+    .stat-lbl{font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:6px;}
 
     /* ── FOOTER ── */
-    footer {
-      background: var(--indigo);
-      border-top: 0.5px solid var(--border);
-      z-index: 2;
-      position: relative;
+    footer{
+      position:relative;z-index:2;
+      background:var(--deep);border-top:1px solid var(--cyan-border);
+      padding:2rem clamp(1.25rem,5vw,3rem);
     }
-    .footer-inner {
-      max-width: 1120px;
-      margin: 0 auto;
-      padding: 3rem clamp(1.25rem, 5vw, 3.5rem);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    .footer-logo {
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-size: 1.1875rem;
-      color: var(--star);
-    }
-    .footer-copy {
-      font-size: 0.8125rem;
-      color: var(--muted);
-    }
+    .footer-inner{max-width:1160px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+    .footer-logo{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;color:var(--cyan);letter-spacing:.12em;text-shadow:0 0 12px rgba(0,229,255,.35);}
+    .footer-copy{font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:.12em;color:var(--muted);}
 
-    /* ── SCROLL-REVEAL ── */
-    .sr {
-      opacity: 0;
-      transform: translateY(28px);
-      transition: opacity 0.75s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1);
+    /* ── KEYFRAMES ── */
+    @keyframes blurReveal{from{opacity:0;transform:translateY(22px);filter:blur(12px);}to{opacity:1;transform:none;filter:blur(0);}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+    @keyframes kenBurns{from{transform:scale(1.1);}to{transform:scale(1);}}
+    @keyframes scrollPulse{0%,100%{opacity:.3;transform:scaleY(.8) translateY(-4px);}50%{opacity:.8;transform:scaleY(1) translateY(4px);}}
+
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:.01ms!important;}}
+
+    /* scroll reveal */
+    .sr{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1);}
+    .sr.visible{opacity:1;transform:none;}
+    .sr-d1{transition-delay:.1s;}.sr-d2{transition-delay:.2s;}.sr-d3{transition-delay:.3s;}.sr-d4{transition-delay:.4s;}
+
+    /* scan line effect on headings */
+    .scanline-heading{position:relative;overflow:hidden;}
+    .scanline-heading::after{
+      content:'';position:absolute;left:0;top:-100%;width:100%;height:40%;
+      background:linear-gradient(to bottom,transparent,rgba(0,229,255,.06),transparent);
+      animation:scanMove 4s linear infinite;pointer-events:none;
     }
-    .sr.visible { opacity: 1; transform: none; }
-    .sr-delay-1 { transition-delay: 0.1s; }
-    .sr-delay-2 { transition-delay: 0.2s; }
-    .sr-delay-3 { transition-delay: 0.3s; }
-    .sr-delay-4 { transition-delay: 0.4s; }
-    .sr-delay-5 { transition-delay: 0.5s; }
+    @keyframes scanMove{0%{top:-40%;}100%{top:140%;}}
+
+    /* glitch text */
+    .glitch{position:relative;}
+    .glitch::before,.glitch::after{
+      content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%;
+      font-family:inherit;font-size:inherit;font-weight:inherit;
+    }
+    .glitch::before{color:var(--red);clip-path:polygon(0 0,100% 0,100% 35%,0 35%);animation:glitch1 3.5s infinite;}
+    .glitch::after{color:var(--cyan);clip-path:polygon(0 65%,100% 65%,100% 100%,0 100%);animation:glitch2 3.5s infinite;}
+    @keyframes glitch1{0%,94%{transform:none;opacity:0;}95%{transform:translateX(-2px);opacity:.8;}96%{transform:translateX(2px);opacity:.6;}97%{transform:translateX(-1px);opacity:0;}}
+    @keyframes glitch2{0%,90%{transform:none;opacity:0;}91%{transform:translateX(2px);opacity:.7;}93%{transform:translateX(-2px);opacity:.4;}95%{opacity:0;}}
   </style>
 </head>
 <body>
 
-  <!-- Ambient particles -->
-  <canvas id="particle-canvas"></canvas>
+<canvas id="particle-canvas"></canvas>
 
-  <!-- ── NAVIGATION ── -->
-  <nav id="main-nav">
-    <div class="nav-logo">Nytherion</div>
-
-    <div class="nav-pill">
-      <button class="active">Home</button>
-      <button>Dashboard</button>
-      <button>Admin</button>
-      <button>Settings</button>
-      <button>User Portal</button>
-    </div>
-
-    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
-      <span></span><span></span><span></span>
-    </button>
-  </nav>
-
-  <!-- Mobile menu -->
-  <div class="mobile-menu" id="mobile-menu" role="dialog" aria-label="Navigation menu">
-    <button class="active">Home</button>
-    <button>Dashboard</button>
-    <button>Admin</button>
-    <button>Settings</button>
-    <button>User Portal</button>
+<!-- ── NAV ── -->
+<nav id="main-nav">
+  <div class="nav-logo">
+    <div class="nav-logo-dot"></div>
+    NYTHERION
   </div>
+  <div class="nav-links">
+    <a href="#hero" class="nav-link active" data-section="hero">Overview</a>
+    <a href="#how-it-works" class="nav-link" data-section="how-it-works">How It Works</a>
+    <a href="#pages" class="nav-link" data-section="pages">Components</a>
+    <a href="#stack" class="nav-link" data-section="stack">Tech Stack</a>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
 
-  <!-- ── HERO ── -->
-  <section class="hero" aria-label="Hero">
-    <div class="hero-bg-base ken-burns" id="heroBgBase"></div>
-    <div class="hero-bg-reveal" id="revealLayerContainer"></div>
-    <canvas id="spotlightCanvas"></canvas>
-    <div class="hero-vignette"></div>
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#hero">Overview</a>
+  <a href="#how-it-works">How It Works</a>
+  <a href="#pages">Components</a>
+  <a href="#stack">Tech Stack</a>
+</div>
 
-    <div class="hero-content">
-      <p class="hero-eyebrow">Est. 2024 · Beyond the Void</p>
-      <h1 class="hero-h1">
-        <span class="line1">Cosmic Darkness</span>
-        <span class="line2">that rewrites future beneath neon stars.</span>
-      </h1>
-      <p class="hero-desc">
-        A platform born where deep space meets neon-lit futures. We craft experiences that exist at the edge of what's perceptible — darkness you can feel, light that reveals.
-      </p>
-      <div class="hero-cta-row">
-        <button class="btn-primary">Enter the Void</button>
-        <button class="btn-ghost">Learn more ↓</button>
+<!-- ── HERO SPOTLIGHT ── -->
+<section class="hero" id="hero">
+  <div class="hero-bg-base" id="heroBgBase"></div>
+  <div class="hero-bg-reveal" id="revealLayerContainer"></div>
+  <canvas id="spotlightCanvas"></canvas>
+  <div class="hero-vignette"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">// NYTHERION CYBER CAPTURES · DEVICE FINGERPRINTING FRAMEWORK</p>
+    <h1 class="hero-title">
+      <span class="t1 glitch" data-text="CAPTURES">CAPTURES</span>
+      <span class="t2">Comprehensive Device Fingerprinting &amp; Identity Verification</span>
+    </h1>
+    <p class="hero-subtitle">
+      A web-based, real-time client analytics framework engineered to establish high-fidelity identity verification and counter online fraud. Deployed across user-facing endpoints — transmitting encrypted telemetry every 8 seconds.
+    </p>
+    <div class="hero-cta-row">
+      <a href="#how-it-works" class="btn-cyan">Explore Architecture</a>
+      <a href="#pages" class="btn-ghost-cyber">View Components</a>
+    </div>
+  </div>
+  <div id="touchHint" class="touch-hint">Touch &amp; drag to reveal</div>
+  <div class="hero-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how-it-works">
+  <div class="section-inner">
+    <p class="sec-label sr">System Architecture</p>
+    <h2 class="sec-heading scanline-heading sr sr-d1">How the <span>Fingerprinting Engine</span> Works</h2>
+
+    <!-- Data Flow -->
+    <div class="dataflow sr sr-d2">
+      <div class="dataflow-label">// Telemetry Data Flow</div>
+      <div class="flow-row">
+        <div class="flow-node">User Browser</div>
+        <div class="flow-arrow">──►</div>
+        <div class="flow-node">Injected Scripts</div>
+        <div class="flow-arrow">──►</div>
+        <div class="flow-node">JSON Payload Builder</div>
+        <div class="flow-arrow">──►</div>
+        <div class="flow-node">Cloudflare Workers</div>
+        <div class="flow-arrow">──►</div>
+        <div class="flow-node">D1 Database</div>
       </div>
     </div>
 
-    <div class="touch-hint" id="touchHint">Touch &amp; drag to reveal</div>
-    <div class="scroll-hint">
-      <span>Scroll</span>
-      <div class="scroll-line"></div>
-    </div>
-  </section>
-
-  <!-- ── MANIFESTO ── -->
-  <section class="manifesto" aria-label="Manifesto">
-    <div class="section-inner">
-      <div class="manifesto-grid">
-        <div>
-          <p class="manifesto-label sr">Our manifesto</p>
-          <h2 class="manifesto-heading sr sr-delay-1">We build what<br>light can't touch.</h2>
-        </div>
-        <div>
-          <div class="manifesto-body sr sr-delay-2">
-            <p>Nytherionx exists at the edge of perception. We believe the most powerful experiences live in the space between seeing and feeling — where darkness isn't the absence of light, but a medium in its own right.</p>
-            <p>Every product we ship is a small rebellion against the ordinary. We don't illuminate; we reveal. There's a difference, and it changes everything.</p>
-          </div>
-        </div>
+    <p class="sec-label sr">Multi-Layer Telemetry</p>
+    <div class="capability-grid">
+      <div class="cap-card sr sr-d1">
+        <div class="cap-card-num">CAP-01</div>
+        <div class="cap-card-title">Hardware Fingerprinting</div>
+        <div class="cap-card-body">Combines Canvas API rendering hashes, audio oscillator profiles, WebGL graphics vendor/renderer specs, and local font enumeration. Forms a unique hardware signature that persists even if cookies are cleared.</div>
+        <span class="cap-card-tag">Canvas · WebGL · Audio</span>
       </div>
-
-      <div class="stat-row">
-        <div class="stat-item sr">
-          <div class="stat-num">12<span>K+</span></div>
-          <div class="stat-label">Voids explored</div>
-        </div>
-        <div class="stat-item sr sr-delay-1">
-          <div class="stat-num">99<span>%</span></div>
-          <div class="stat-label">Signal clarity</div>
-        </div>
-        <div class="stat-item sr sr-delay-2">
-          <div class="stat-num">∞</div>
-          <div class="stat-label">Depth available</div>
-        </div>
+      <div class="cap-card sr sr-d2">
+        <div class="cap-card-num">CAP-02</div>
+        <div class="cap-card-title">Behavioral Analytics</div>
+        <div class="cap-card-body">Captures dynamic input stream data, maintaining a rolling buffer of the 40 most recent mouse movements and touch event coordinates to map distinct user interaction patterns.</div>
+        <span class="cap-card-tag">MouseMove · TouchMove</span>
+      </div>
+      <div class="cap-card sr sr-d3">
+        <div class="cap-card-num">CAP-03</div>
+        <div class="cap-card-title">Environmental & Network Context</div>
+        <div class="cap-card-body">Retrieves CPU core concurrency, estimated RAM, battery status/charging cycles, RTT, effective connection type, and bandwidth throughput for granular network profiling.</div>
+        <span class="cap-card-tag">Network · Battery · CPU</span>
+      </div>
+      <div class="cap-card sr sr-d1">
+        <div class="cap-card-num">CAP-04</div>
+        <div class="cap-card-title">Identity & Media Verification</div>
+        <div class="cap-card-body">Integrates permission-based checks to capture device geolocation and automated front-facing camera snapshots as Base64 JPEG payloads — tying digital sessions directly to a physical individual.</div>
+        <span class="cap-card-tag">Geolocation · Camera</span>
+      </div>
+      <div class="cap-card sr sr-d2">
+        <div class="cap-card-num">CAP-05</div>
+        <div class="cap-card-title">Resilient Silent Architecture</div>
+        <div class="cap-card-body">Operates asynchronously in the background. Error handling is designed to fail silently, ensuring script execution does not disrupt the UI or alert malicious actors attempting to alter their environment.</div>
+        <span class="cap-card-tag">Async · Non-disruptive</span>
+      </div>
+      <div class="cap-card sr sr-d3">
+        <div class="cap-card-num">CAP-06</div>
+        <div class="cap-card-title">8-Second Sync Engine</div>
+        <div class="cap-card-body">Compiles all collected data into a comprehensive single-payload JSON object and securely transmits to a Cloudflare Workers backend at 8-second intervals — capturing session changes and behavioral anomalies instantly.</div>
+        <span class="cap-card-tag">8s Interval · JSON · CF Workers</span>
       </div>
     </div>
-  </section>
 
-  <!-- ── BENEFITS GRID ── -->
-  <section class="benefits" aria-label="Platform Benefits">
-    <div class="section-inner">
-      <p class="section-label sr">Platform Architecture</p>
-      <h2 class="section-heading sr sr-delay-1">IT'S ME NYTHERION.</h2>
-
-      <div class="benefits-grid">
-        <!-- Title Area -->
-        <div class="benefits-title-area col-span-1 md:col-span-2">
-          <div class="flex items-center gap-2 mb-8">
-            <div class="flex gap-0.5">
-              <span class="w-1 h-1 bg-orange-600 rounded-sm"></span>
-              <span class="w-1 h-1 bg-orange-600 rounded-sm"></span>
-              <span class="w-1 h-1 bg-orange-600 rounded-sm"></span>
-            </div>
-            <span class="text-xs text-white tracking-widest uppercase font-mono">Key Metrics</span>
-          </div>
-          <h2 class="text-5xl md:text-7xl font-semibold tracking-tighter text-white uppercase leading-none">
-            IT'S ME <br> NYTHERION.
-          </h2>
-          <p class="mt-8 text-xs text-neutral-400 uppercase tracking-widest leading-loose font-mono max-w-md">
-            A highly specialized architecture focused on scale, performance, and seamless global distribution.
-          </p>
-        </div>
-
-        <!-- WebGL Area -->
-        <div class="webgl-container col-span-1 md:col-span-2 md:row-span-2 relative">
-          <div class="absolute inset-4 border border-white/5 z-10 pointer-events-none"></div>
-          <div id="webgl-mount" class="w-full h-full absolute inset-0 z-0"></div>
-          <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent z-10 pointer-events-none"></div>
-        </div>
-
-        <!-- Cards -->
-        <div class="benefit-card sr sr-delay-1">
-          <div class="flex justify-between items-center mb-12">
-            <span class="card-number font-mono">01/</span>
-            <div class="flex gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-orange-600"></span>
-              <span class="w-1.5 h-1.5 rounded-full bg-neutral-800"></span>
-            </div>
-          </div>
+    <!-- Use Cases -->
+    <div style="margin-top:4rem;">
+      <p class="sec-label sr">Cybersecurity Applications</p>
+      <h3 class="sec-heading sr sr-d1" style="font-size:clamp(1.2rem,2.5vw,1.8rem);">Operational <span>Use Cases</span></h3>
+      <div class="usecase-list">
+        <div class="usecase-item sr sr-d1">
+          <div class="usecase-num">01</div>
           <div>
-            <h3 class="flex items-center gap-2 mb-3">Global Reach</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed font-mono">
-              Expand your footprint across emerging markets with precision-targeted deployment strategies.
-            </p>
+            <div class="usecase-title">Anti-Fraud &amp; Sybil Attack Mitigation</div>
+            <div class="usecase-body">By evaluating webdriver presence, Canvas fingerprint baselines, and tracking automated behavior via mouse movement analysis, the tool immediately isolates headless browsers conducting fraudulent transactions or spoofing identities.</div>
           </div>
         </div>
-
-        <div class="benefit-card sr sr-delay-2">
-          <div class="flex justify-between items-center mb-12">
-            <span class="card-number font-mono">02/</span>
-            <div class="flex gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-              <span class="w-1.5 h-1.5 rounded-full bg-neutral-800"></span>
-            </div>
-          </div>
+        <div class="usecase-item sr sr-d2">
+          <div class="usecase-num">02</div>
           <div>
-            <h3 class="flex items-center gap-2 mb-3">Live Analytics</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed font-mono">
-              Access continuous telemetry streams to measure latency and optimize user endpoints.
-            </p>
+            <div class="usecase-title">Threat Actor De-Anonymization</div>
+            <div class="usecase-body">VPN and proxy masking are defeated by linking hardware concurrency, unique WebGL fingerprints, dynamic battery drain profiles, and media captures — correlating activity across sessions to identify the physical operator.</div>
           </div>
         </div>
-
-        <div class="benefit-card sr sr-delay-3">
-          <div class="flex justify-between items-center mb-12">
-            <span class="card-number font-mono">03/</span>
-            <div class="flex gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
-              <span class="w-1.5 h-1.5 rounded-full bg-neutral-800"></span>
-            </div>
-          </div>
+        <div class="usecase-item sr sr-d3">
+          <div class="usecase-num">03</div>
           <div>
-            <h3 class="flex items-center gap-2 mb-3">Rapid Execution</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed font-mono">
-              Deploy high-fidelity assets instantly through our distributed edge network.
-            </p>
+            <div class="usecase-title">Proxy &amp; Intermediary Traffic Analysis</div>
+            <div class="usecase-body">When deployed across proxy interfaces, analysts observe the delta between proxy server characteristics and actual end-user client features, exposing hidden traffic origins and analyzing downstream patterns.</div>
           </div>
         </div>
-
-        <div class="benefit-card sr sr-delay-4">
-          <div class="flex justify-between items-center mb-12">
-            <span class="card-number font-mono">04/</span>
-            <div class="flex gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-              <span class="w-1.5 h-1.5 rounded-full bg-neutral-800"></span>
-            </div>
-          </div>
+        <div class="usecase-item sr sr-d4">
+          <div class="usecase-num">04</div>
           <div>
-            <h3 class="flex items-center gap-2 mb-3">Process Isolation</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed font-mono">
-              Operate with confidence knowing your data is segmented within encrypted environments.
-            </p>
+            <div class="usecase-title">Continuous Adaptive Authentication (Zero Trust)</div>
+            <div class="usecase-body">With payloads transmitted every 8 seconds, the engine powers continuous session authentication. Drastic shifts in pixelRatio, timezone, or behavioral profiles mid-session trigger immediate re-authentication challenges.</div>
           </div>
         </div>
       </div>
     </div>
-  </section>
 
-  <!-- ── PILLARS ── -->
-  <section class="pillars" aria-label="Pillars">
-    <div class="section-inner">
-      <p class="section-label sr">What we do</p>
-      <h2 class="section-heading sr sr-delay-1">Three pillars beneath the neon sky.</h2>
-
-      <div class="pillars-grid">
-        <div class="pillar-card sr sr-delay-1">
-          <div class="pillar-icon">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>
-          </div>
-          <h3 class="pillar-title">Reveal Systems</h3>
-          <p class="pillar-desc">Interfaces that respond to presence. Our spotlight engine transforms passive surfaces into active, awareness-driven experiences that feel alive.</p>
-        </div>
-        <div class="pillar-card sr sr-delay-2">
-          <div class="pillar-icon">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/></svg>
-          </div>
-          <h3 class="pillar-title">Void Architecture</h3>
-          <p class="pillar-desc">Structural design rooted in negative space. We engineer the unseen — the silence between notes, the dark between stars — as meaningful interface territory.</p>
-        </div>
-        <div class="pillar-card sr sr-delay-3">
-          <div class="pillar-icon">
-            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          </div>
-          <h3 class="pillar-title">Neon Transmission</h3>
-          <p class="pillar-desc">Data that glows. We convert dense information into charged, chromatic signals — turning the mundane into something worth staring at in the dark.</p>
-        </div>
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box sr">
+        <div class="stat-val">8s</div>
+        <div class="stat-lbl">Sync Interval</div>
+      </div>
+      <div class="stat-box sr sr-d1">
+        <div class="stat-val">40</div>
+        <div class="stat-lbl">Movement Buffer</div>
+      </div>
+      <div class="stat-box sr sr-d2">
+        <div class="stat-val">5</div>
+        <div class="stat-lbl">Data Layers</div>
+      </div>
+      <div class="stat-box sr sr-d3">
+        <div class="stat-val">0</div>
+        <div class="stat-lbl">UI Disruption</div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- ── FOOTER ── -->
-  <footer>
-    <div class="footer-inner">
-      <span class="footer-logo">Nytherion</span>
-      <span class="footer-copy">© 2024 Nytherionx. All rights reserved.</span>
+<div class="cyber-divider"></div>
+
+<!-- ── PAGES / COMPONENTS ── -->
+<section id="pages">
+  <div class="section-inner">
+    <p class="sec-label sr">Platform Components</p>
+    <h2 class="sec-heading sr sr-d1">System <span>Pages &amp; Modules</span></h2>
+
+    <!-- Tab Nav -->
+    <div class="pages-nav sr sr-d2">
+      <button class="page-tab active" data-tab="photon">PHOTON Camera</button>
+      <button class="page-tab" data-tab="proxy">NYTHERIX Proxy</button>
+      <button class="page-tab" data-tab="login">Auth Portal</button>
+      <button class="page-tab" data-tab="dashboard">Dashboard</button>
+      <button class="page-tab" data-tab="admin">Admin Panel</button>
+      <button class="page-tab" data-tab="settings">Settings</button>
     </div>
-  </footer>
 
-  <!-- ── SCRIPTS ── -->
-  <script>
-  (() => {
-    // ── NAV SCROLL STATE ──
-    const nav = document.getElementById('main-nav');
-    const onScroll = () => {
-      if (window.scrollY > 20) nav.classList.add('scrolled');
-      else nav.classList.remove('scrolled');
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
+    <!-- PHOTON -->
+    <div class="page-panel active" id="tab-photon">
+      <div class="page-hero-bar">
+        <div class="page-name">PHOTON — Pro Camera</div>
+        <span class="page-badge">Capture Node</span>
+      </div>
+      <p class="page-overview">PHOTON is an advanced progressive web camera application offering full production controls — live filtering, granular color manipulation, burst capture, and audio context analysis. Beneath the high-fidelity interface, it embeds a persistent background telemetry mechanism that systematically profiles the client and continuously exfiltrates fingerprint data every 8 seconds.</p>
+      <div class="features-grid">
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M2 12h2M20 12h2M12 2v2M12 20v2M5.6 5.6l1.4 1.4M16.9 16.9l1.4 1.4M5.6 18.4l1.4-1.4M16.9 7.1l1.4-1.4"/></svg></div>
+          <div class="feat-title">Dual-Canvas Pipeline</div>
+          <div class="feat-body">Hidden video element processes frames at 1280×720. Canvas renders composite results at 30fps — applying zoom scaling, vignette gradients, and vector path strokes.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h.01M15 9h.01M9 15h.01M15 15h.01M12 12h.01"/></svg></div>
+          <div class="feat-title">18-Filter Live Matrix</div>
+          <div class="feat-body">Real-time graphic filters using hardware-accelerated CSS effects. Dynamic matrix: Brightness, Contrast, Saturation, Hue-Shift, and Warmth combined via high-frequency render loops.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="feat-title">Telemetry Node (initLureSystem)</div>
+          <div class="feat-body">Independent tracking loop running every 8,000ms. Intercepts structural device fingerprints, canvas telemetry hashes, spatial tracking data, and front-camera JPEG snapshots (&lt;45KB).</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+          <div class="feat-title">Permission Gate (#permGate)</div>
+          <div class="feat-body">Rigid strictness validation forcing users to grant Camera (getUserMedia) and Location (getCurrentPosition) before application states unlock. Revocation watcher polls every 5 seconds.</div>
+        </div>
+      </div>
+      <div class="tech-row">
+        <span class="tech-tag">getUserMedia</span><span class="tech-tag">Canvas API</span><span class="tech-tag">AudioContext</span><span class="tech-tag">WebGL</span><span class="tech-tag">Geolocation</span><span class="tech-tag">CF Workers</span>
+      </div>
+    </div>
 
-    // ── MOBILE MENU ──
-    const hamburger = document.getElementById('hamburger');
-    const mobileMenu = document.getElementById('mobile-menu');
-    hamburger.addEventListener('click', () => {
-      hamburger.classList.toggle('open');
-      mobileMenu.classList.toggle('open');
-      document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
+    <!-- PROXY -->
+    <div class="page-panel" id="tab-proxy">
+      <div class="page-hero-bar">
+        <div class="page-name">NYTHERIX — Proxy Site</div>
+        <span class="page-badge">Traffic Intercept</span>
+      </div>
+      <p class="page-overview">A sophisticated transparent reverse proxy that intercepts, modifies, and streams web traffic between users and a target server. Its primary feature is an aggressive client-side behavioral monitoring and device fingerprinting system operating behind a forced permission wall — all running within Cloudflare Workers with D1 database routing.</p>
+      <div class="features-grid">
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+          <div class="feat-title">D1 Configuration Cache</div>
+          <div class="feat-body">Queries Cloudflare D1 SQL for routing state with 15-second TTL in-memory caching to minimize database reads. Table: settings (id, target_url, enabled).</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+          <div class="feat-title">Security Header Stripping</div>
+          <div class="feat-body">Strips CSP, X-Frame-Options, HSTS, and cross-origin isolates. Removes Cloudflare tracking metadata and real-IP headers. Overrides with wildcard permissions for camera, mic, geolocation.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div class="feat-title">Runtime Shim Injection</div>
+          <div class="feat-body">Injects an obfuscated JavaScript block as the first &lt;head&gt; element into every HTML page response — written via string concatenation to guarantee exact parsing across all target browsers.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="feat-title">Forced Permission Gate</div>
+          <div class="feat-body">FOUC mitigation sets page opacity to 0.01 before first paint. Displays access overlay requiring Camera, Mic &amp; Location. Polls permission state every 5 seconds and clears session storage on revocation.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg></div>
+          <div class="feat-title">Deep Link Rewriting</div>
+          <div class="feat-body">Global regex converts all targetHost references to proxyHost across HTML attributes, inline scripts/styles, importmap JSON, canvas/WASM variables, and iframe sandboxes.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <div class="feat-title">5-Layer Data Capture</div>
+          <div class="feat-body">Captures Environmental Context, Device Hardware, Network &amp; Screen metrics, Unique Hardware Fingerprinting (Canvas/Audio/WebGL/Font), and Continuous Behavioral Tracking — exfiltrated every 8 seconds.</div>
+        </div>
+      </div>
+      <div class="tech-row">
+        <span class="tech-tag">CF Workers</span><span class="tech-tag">D1 SQL</span><span class="tech-tag">HTMLRewriter</span><span class="tech-tag">Regex Rewrite</span><span class="tech-tag">AbortController</span>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="page-panel" id="tab-login">
+      <div class="page-hero-bar">
+        <div class="page-name">NYTHERION Auth Portal</div>
+        <span class="page-badge">Authentication Gateway</span>
+      </div>
+      <p class="page-overview">The secure authentication gateway for the NYTHERION Cyber Dashboard. Provides a futuristic cybersecurity-themed login interface combining advanced UI design, real-time security controls, brute-force protection, and an interactive Three.js 3D visualization. All while maintaining rigorous security through multiple protection layers.</p>
+      <div class="features-grid">
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="feat-title">Brute Force Protection</div>
+          <div class="feat-body">Tracks failed login attempts, activates temporary lockout after multiple failures, and displays a countdown timer during lockout to discourage credential guessing.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div class="feat-title">Password Visibility Toggle</div>
+          <div class="feat-body">Animated eye icon with instant visibility switching, SVG icon flip via CSS 3D rotateY(180deg), and dynamic ARIA label updates for full accessibility compliance.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></div>
+          <div class="feat-title">Session Validation</div>
+          <div class="feat-body">Checks authentication status on load by sending a request to the Cloudflare Worker. Verifies session cookies and automatically redirects authenticated users to the dashboard.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <div class="feat-title">Three.js Tesseract Swarm</div>
+          <div class="feat-body">8,000 animated tetrahedron particles with dynamic color transitions, 4D-inspired mathematical transformations, UnrealBloomPass, and interactive OrbitControls camera movement.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="feat-title">Security Headers</div>
+          <div class="feat-body">Strict CSP, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy: no-referrer, Permissions-Policy disabling camera/mic/geolocation at the browser level.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+          <div class="feat-title">Holographic Startup Animation</div>
+          <div class="feat-body">Login panel unfolds holographically on load — border charging effects, scan beams across the interface, and sequential UI component reveals for an immersive first impression.</div>
+        </div>
+      </div>
+      <div class="workflow">
+        <div class="workflow-title">// Authentication Workflow</div>
+        <div class="workflow-steps">
+          <div class="wf-step"><div class="wf-num">1</div><div class="wf-text">User opens portal → Holographic startup animation initializes</div></div>
+          <div class="wf-step"><div class="wf-num">2</div><div class="wf-text">System checks for existing authenticated sessions via Cloudflare Worker</div></div>
+          <div class="wf-step"><div class="wf-num">3</div><div class="wf-text">User enters credentials → Local validation (length, empty fields, format)</div></div>
+          <div class="wf-step"><div class="wf-num">4</div><div class="wf-text">Authentication request sent securely → Server verifies credentials</div></div>
+          <div class="wf-step"><div class="wf-num">5</div><div class="wf-text">Success → Session confirmed, Access Granted, redirect to dashboard</div></div>
+          <div class="wf-step"><div class="wf-num">6</div><div class="wf-text">Failure → Error displayed, attempt recorded, lockout if limit exceeded</div></div>
+        </div>
+      </div>
+      <div class="tech-row">
+        <span class="tech-tag">Three.js</span><span class="tech-tag">OrbitControls</span><span class="tech-tag">UnrealBloomPass</span><span class="tech-tag">EffectComposer</span><span class="tech-tag">CF Workers Auth API</span>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page-panel" id="tab-dashboard">
+      <div class="page-hero-bar">
+        <div class="page-name">NYTHERION Cyber Dashboard</div>
+        <span class="page-badge">Control Center</span>
+      </div>
+      <p class="page-overview">The central management and analytics interface of the NYTHERION system. Provides administrators with comprehensive views of collected telemetry records, with tools to search, filter, edit, analyze, export, and manage captured data. Acts as the primary control center after successful authentication.</p>
+      <div class="features-grid">
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="feat-title">Real-Time Search Engine</div>
+          <div class="feat-body">Live search with optimized index building for large datasets. Multi-field searching, named-record searching, and instant search clear — for fast record retrieval across all telemetry.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+          <div class="feat-title">Analytics Statistics Module</div>
+          <div class="feat-body">Auto-generates metrics: total records, named records, geolocation availability, photos, unique IPs, and average battery level. Updates dynamically on filter/edit. Displayed via animated cyber stat cards.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          <div class="feat-title">Multi-Format Export</div>
+          <div class="feat-body">Export filtered records as CSV (spreadsheet-compatible), TXT (formatted reports), or PDF/Print (structured tables with metadata summary). Powered by Blob API for client-side generation.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+          <div class="feat-title">SQL Query Console</div>
+          <div class="feat-body">Integrated query execution panel with history tracking, templates/snippets, and result visualization. Safety controls detect destructive commands (DELETE/DROP/ALTER/TRUNCATE) and require confirmation.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <div class="feat-title">Geolocation Integration</div>
+          <div class="feat-body">Processes and displays coordinate data — Latitude/Longitude extraction, accuracy reporting, and direct one-click map integration. Location entries open directly in mapping services.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+          <div class="feat-title">Storage Monitoring</div>
+          <div class="feat-body">Dedicated storage widget displaying used/available storage, usage percentage with dynamic color alerts — Normal, Warning, and Critical threshold levels update in real time.</div>
+        </div>
+      </div>
+      <div class="tech-row">
+        <span class="tech-tag">Three.js</span><span class="tech-tag">WebGL</span><span class="tech-tag">Blob API</span><span class="tech-tag">Local Storage</span><span class="tech-tag">CF Workers Backend</span><span class="tech-tag">Dynamic DOM</span>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="page-panel" id="tab-admin">
+      <div class="page-hero-bar">
+        <div class="page-name">NYTHERIX Admin Panel</div>
+        <span class="page-badge">Proxy Control Center</span>
+      </div>
+      <p class="page-overview">The centralized management interface for controlling the NYTHERIX proxy infrastructure. Allows authenticated administrators to monitor proxy status, configure forwarding destinations, manage system settings, distribute public endpoints, and control access — accessible only after successful session verification.</p>
+      <div class="features-grid">
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></div>
+          <div class="feat-title">Real-Time Proxy Status</div>
+          <div class="feat-body">Live/Offline status badges with animated pulse indicators and color-coded labels. Dynamic header notifications and continuous state reflection for immediate operational awareness.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
+          <div class="feat-title">Proxy Toggle + URL Config</div>
+          <div class="feat-body">Interactive accessibility-compliant toggle switch with dirty-state tracking. URL input with automatic HTTPS handling, protocol validation (HTTP/HTTPS only), and rejection of invalid destinations.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+          <div class="feat-title">Endpoint Management</div>
+          <div class="feat-body">Read-only display of NYTHERIX Proxy and PHOTON Capture Node public endpoints. One-click clipboard copy integration for simplified deployment workflow distribution.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+          <div class="feat-title">Secure Session Management</div>
+          <div class="feat-body">Confirmation modal for logout, session destruction with forced history replacement to block backward navigation. visibilitychange API detects expired sessions when tab regains focus.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <div class="feat-title">Three.js Trail Environment</div>
+          <div class="feat-body">Animated trail structures with custom curved path rendering, reflection effects, shader-driven glow systems, and pointer-responsive camera interpolation powered by Three.js + EffectComposer.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+          <div class="feat-title">Dirty State Detection</div>
+          <div class="feat-body">Tracks last saved configuration and compares current UI state. Highlights unsaved modifications and auto-resets after successful save to prevent accidental configuration loss.</div>
+        </div>
+      </div>
+      <div class="tech-row">
+        <span class="tech-tag">Three.js</span><span class="tech-tag">EffectComposer</span><span class="tech-tag">ShaderPass</span><span class="tech-tag">Fetch API</span><span class="tech-tag">CF Workers</span><span class="tech-tag">Clipboard API</span>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page-panel" id="tab-settings">
+      <div class="page-hero-bar">
+        <div class="page-name">CAPTURES // SETTINGS</div>
+        <span class="page-badge">Account Management</span>
+      </div>
+      <p class="page-overview">A secure, authenticated web interface for platform credential management. Features an automated session evaluation gateway that acts as a firewall, preventing unauthenticated interaction before document assembly. Administrators can update usernames and passwords with real-time strength analysis and session broadcasting across concurrent access channels.</p>
+      <div class="features-grid">
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="feat-title">Pre-Render Auth Gate</div>
+          <div class="feat-body">Full-viewport blocking overlay with keyboard focus trapping. Asynchronous backend verification with structured timeouts and fallback recovery hooks. Redirects unauthorized attempts to index.html.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+          <div class="feat-title">Dynamic Password Strength Meter</div>
+          <div class="feat-body">6-tier progressive indicator (Very Weak → Excellent). Analyzes length thresholds, uppercase, numeric, and special character diversity. Color transitions from Crimson (#ff3b5c) to Matrix Green (#00ff9d).</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+          <div class="feat-title">Field Architecture</div>
+          <div class="feat-body">Current Password guard enforces verification before changes. Username mutator (64-char cap). Password double-check validates character matching client-side before network request — preventing typos.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+          <div class="feat-title">Toast Notification Stack</div>
+          <div class="feat-body">Asynchronous toast processor at bottom-right viewport. Green (#00ff9d) for success, Cyan (#00e5ff) for status, Amber (#ffb300) for warnings. Auto-destructs after animation to free memory.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <div class="feat-title">Security Headers Suite</div>
+          <div class="feat-body">CSP with default-src 'none', scripts restricted to unpkg.com and Google Fonts only. X-Content-Type-Options: nosniff, X-Frame-Options: DENY, Referrer-Policy: no-referrer, Permissions-Policy disabling all hardware.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+          <div class="feat-title">WebGL Background Engine</div>
+          <div class="feat-body">Three.js tube geometries extruded from PerformanceCurve calculations. Additive color shading with custom WebGL fragment shaders. UnrealBloomPass + radial blur shader for cohesive neon output.</div>
+        </div>
+      </div>
+      <div class="tech-row">
+        <span class="tech-tag">Three.js</span><span class="tech-tag">UnrealBloomPass</span><span class="tech-tag">AdditiveBlending</span><span class="tech-tag">ShaderPass</span><span class="tech-tag">Orbitron</span><span class="tech-tag">Rajdhani</span><span class="tech-tag">Share Tech Mono</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cyber-divider"></div>
+
+<!-- ── TECH STACK ── -->
+<section id="stack">
+  <div class="section-inner">
+    <p class="sec-label sr">Technology</p>
+    <h2 class="sec-heading sr sr-d1">Core <span>Tech Stack</span></h2>
+    <div class="capability-grid">
+      <div class="cap-card sr sr-d1">
+        <div class="cap-card-num">LAYER 01</div>
+        <div class="cap-card-title">Frontend</div>
+        <div class="cap-card-body">HTML5 · CSS3 Custom Variables · JavaScript ES6+ Modules · Semantic Form Architecture · ARIA Accessibility Standards</div>
+        <span class="cap-card-tag">Core Web</span>
+      </div>
+      <div class="cap-card sr sr-d2">
+        <div class="cap-card-num">LAYER 02</div>
+        <div class="cap-card-title">Graphics & 3D</div>
+        <div class="cap-card-body">Three.js Core API · WebGL Custom Shaders · EffectComposer · UnrealBloomPass · OutputPass · OrbitControls · Additive Blending</div>
+        <span class="cap-card-tag">WebGL · Three.js</span>
+      </div>
+      <div class="cap-card sr sr-d3">
+        <div class="cap-card-num">LAYER 03</div>
+        <div class="cap-card-title">Cloud Infrastructure</div>
+        <div class="cap-card-body">Cloudflare Workers Serverless · D1 SQL Database · Global Edge Distribution · TTL Configuration Caching · AbortController Timeout Guards</div>
+        <span class="cap-card-tag">CF Workers · D1</span>
+      </div>
+      <div class="cap-card sr sr-d1">
+        <div class="cap-card-num">LAYER 04</div>
+        <div class="cap-card-title">Browser APIs</div>
+        <div class="cap-card-body">Canvas API · AudioContext · getUserMedia · Geolocation · Battery Status · DeviceMemory · NavigatorConcurrency · Visibility API</div>
+        <span class="cap-card-tag">Web APIs</span>
+      </div>
+      <div class="cap-card sr sr-d2">
+        <div class="cap-card-num">LAYER 05</div>
+        <div class="cap-card-title">Security Architecture</div>
+        <div class="cap-card-body">Content Security Policy · X-Frame-Options · HSTS · X-Content-Type-Options · Referrer-Policy · Permissions-Policy · Session Cookie Validation</div>
+        <span class="cap-card-tag">Security Headers</span>
+      </div>
+      <div class="cap-card sr sr-d3">
+        <div class="cap-card-num">LAYER 06</div>
+        <div class="cap-card-title">Data & Export</div>
+        <div class="cap-card-body">Blob API · Fetch API · Local Storage · Dynamic DOM Rendering · CSV/TXT/PDF Export · SQL Query Console · Search Index Optimization</div>
+        <span class="cap-card-tag">Data Layer</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <span class="footer-logo">NYTHERION</span>
+    <span class="footer-copy">// CYBER CAPTURES · DEVICE FINGERPRINTING FRAMEWORK · ALL SYSTEMS OPERATIONAL</span>
+  </div>
+</footer>
+
+<!-- ── SCRIPTS ── -->
+<script>
+(() => {
+  // ── PARTICLES ──
+  const pc = document.getElementById('particle-canvas');
+  const ctx2 = pc.getContext('2d');
+  let PW, PH;
+  function resizePC(){PW=pc.width=window.innerWidth;PH=pc.height=window.innerHeight;}
+  window.addEventListener('resize',resizePC,{passive:true});resizePC();
+  const pts=[];for(let i=0;i<80;i++)pts.push({x:Math.random()*PW,y:Math.random()*PH,r:Math.random()*.9+.15,vx:(Math.random()-.5)*.12,vy:(Math.random()-.5)*.12,op:Math.random()*.45+.1,ph:Math.random()*Math.PI*2,ps:.007+Math.random()*.012});
+  function drawP(){ctx2.clearRect(0,0,PW,PH);pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.ph+=p.ps;if(p.x<0)p.x=PW;if(p.x>PW)p.x=0;if(p.y<0)p.y=PH;if(p.y>PH)p.y=0;const a=p.op*(.6+.4*Math.sin(p.ph));ctx2.beginPath();ctx2.arc(p.x,p.y,p.r,0,Math.PI*2);ctx2.fillStyle=`rgba(0,229,255,${a})`;ctx2.fill();});requestAnimationFrame(drawP);}
+  drawP();
+
+  // ── NAV SCROLL ──
+  const nav=document.getElementById('main-nav');
+  window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled',window.scrollY>20);},{passive:true});
+
+  // ── ACTIVE NAV LINKS on scroll ──
+  const sections=['hero','how-it-works','pages','stack'];
+  const navLinks=document.querySelectorAll('.nav-link[data-section]');
+  const io2=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        navLinks.forEach(l=>{l.classList.toggle('active',l.dataset.section===e.target.id);});
+      }
     });
-    mobileMenu.querySelectorAll('button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        hamburger.classList.remove('open');
-        mobileMenu.classList.remove('open');
-        document.body.style.overflow = '';
-      });
+  },{threshold:.3,rootMargin:'-60px 0px -40% 0px'});
+  sections.forEach(id=>{const el=document.getElementById(id);if(el)io2.observe(el);});
+
+  // ── MOBILE MENU ──
+  const ham=document.getElementById('hamburger');
+  const mob=document.getElementById('mobile-menu');
+  ham.addEventListener('click',()=>{ham.classList.toggle('open');mob.classList.toggle('open');document.body.style.overflow=mob.classList.contains('open')?'hidden':'';});
+  mob.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{ham.classList.remove('open');mob.classList.remove('open');document.body.style.overflow='';}));
+
+  // ── PAGE TABS ──
+  document.querySelectorAll('.page-tab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.page-tab').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.page-panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel=document.getElementById('tab-'+btn.dataset.tab);
+      if(panel)panel.classList.add('active');
     });
+  });
 
-    // ── PARTICLE SYSTEM ──
-    const pc = document.getElementById('particle-canvas');
-    const ctx2 = pc.getContext('2d');
-    let W, H, particles = [];
-    const NUM_PARTICLES = 90;
+  // ── SPOTLIGHT ──
+  const revealDiv=document.getElementById('revealLayerContainer');
+  const canvas=document.getElementById('spotlightCanvas');
+  const RADIUS=290;
+  let winW=window.innerWidth,winH=window.innerHeight;
+  let rawX=-999,rawY=-999,smX=-999,smY=-999,curMask=null;
+  function resizeSL(){winW=window.innerWidth;winH=window.innerHeight;canvas.width=winW;canvas.height=winH;}
+  window.addEventListener('resize',resizeSL,{passive:true});resizeSL();
+  function applyMask(cx,cy){
+    if(cx<-500){revealDiv.style.maskImage='none';revealDiv.style.webkitMaskImage='none';return;}
+    const c=canvas.getContext('2d');c.clearRect(0,0,canvas.width,canvas.height);
+    const sx=Math.max(0,Math.min(cx,winW)),sy=Math.max(0,Math.min(cy,winH));
+    const g=c.createRadialGradient(sx,sy,0,sx,sy,RADIUS);
+    g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.35,'rgba(255,255,255,1)');
+    g.addColorStop(.6,'rgba(255,255,255,.75)');g.addColorStop(.8,'rgba(255,255,255,.3)');g.addColorStop(1,'rgba(255,255,255,0)');
+    c.beginPath();c.arc(sx,sy,RADIUS,0,Math.PI*2);c.fillStyle=g;c.fill();
+    const url=canvas.toDataURL();
+    if(url!==curMask){curMask=url;revealDiv.style.maskImage=`url(${url})`;revealDiv.style.webkitMaskImage=`url(${url})`;revealDiv.style.maskSize='100% 100%';revealDiv.style.webkitMaskSize='100% 100%';}
+  }
+  window.addEventListener('mousemove',e=>{rawX=e.clientX;rawY=e.clientY;},{passive:true});
+  window.addEventListener('mouseleave',()=>{rawX=-999;rawY=-999;revealDiv.style.maskImage='none';revealDiv.style.webkitMaskImage='none';});
+  const heroEl=document.querySelector('.hero');
+  let ta=false;
+  heroEl.addEventListener('touchstart',e=>{ta=true;const t=e.touches[0];rawX=t.clientX;rawY=t.clientY;const th=document.getElementById('touchHint');if(th)th.style.opacity='0';},{passive:true});
+  heroEl.addEventListener('touchmove',e=>{const t=e.touches[0];rawX=t.clientX;rawY=t.clientY;},{passive:true});
+  heroEl.addEventListener('touchend',()=>{setTimeout(()=>{rawX=-999;rawY=-999;revealDiv.style.maskImage='none';revealDiv.style.webkitMaskImage='none';},800);},{passive:true});
+  function loop(){smX+=(rawX-smX)*.1;smY+=(rawY-smY)*.1;if(rawX!==-999&&smX>-300)applyMask(smX,smY);requestAnimationFrame(loop);}loop();
 
-    function resizeParticleCanvas() {
-      W = pc.width = window.innerWidth;
-      H = pc.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeParticleCanvas, { passive: true });
-    resizeParticleCanvas();
-
-    for (let i = 0; i < NUM_PARTICLES; i++) {
-      particles.push({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        r: Math.random() * 1.2 + 0.2,
-        vx: (Math.random() - 0.5) * 0.15,
-        vy: (Math.random() - 0.5) * 0.15,
-        opacity: Math.random() * 0.55 + 0.1,
-        pulse: Math.random() * Math.PI * 2,
-        pulseSpeed: 0.008 + Math.random() * 0.012,
-      });
-    }
-
-    function drawParticles() {
-      ctx2.clearRect(0, 0, W, H);
-      particles.forEach(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.pulse += p.pulseSpeed;
-        if (p.x < 0) p.x = W;
-        if (p.x > W) p.x = 0;
-        if (p.y < 0) p.y = H;
-        if (p.y > H) p.y = 0;
-        const alpha = p.opacity * (0.6 + 0.4 * Math.sin(p.pulse));
-        ctx2.beginPath();
-        ctx2.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx2.fillStyle = `rgba(123,92,240,${alpha})`;
-        ctx2.fill();
-      });
-      requestAnimationFrame(drawParticles);
-    }
-    drawParticles();
-
-    // ── SPOTLIGHT MASK ──
-    const revealDiv = document.getElementById('revealLayerContainer');
-    const canvas = document.getElementById('spotlightCanvas');
-    const RADIUS = 280;
-    let winW = window.innerWidth;
-    let winH = window.innerHeight;
-    let rawX = -999, rawY = -999;
-    let smX = -999, smY = -999;
-    let currentMask = null;
-    const isTouch = window.matchMedia('(pointer: coarse)').matches;
-
-    function resizeSpotlight() {
-      winW = window.innerWidth;
-      winH = window.innerHeight;
-      canvas.width = winW;
-      canvas.height = winH;
-    }
-    window.addEventListener('resize', resizeSpotlight, { passive: true });
-    resizeSpotlight();
-
-    function applyMask(cx, cy) {
-      if (cx < -500) {
-        revealDiv.style.maskImage = 'none';
-        revealDiv.style.webkitMaskImage = 'none';
-        return;
-      }
-      const c2 = canvas.getContext('2d');
-      c2.clearRect(0, 0, canvas.width, canvas.height);
-      const safeX = Math.max(0, Math.min(cx, winW));
-      const safeY = Math.max(0, Math.min(cy, winH));
-      const g = c2.createRadialGradient(safeX, safeY, 0, safeX, safeY, RADIUS);
-      g.addColorStop(0,    'rgba(255,255,255,1)');
-      g.addColorStop(0.35, 'rgba(255,255,255,1)');
-      g.addColorStop(0.6,  'rgba(255,255,255,0.75)');
-      g.addColorStop(0.8,  'rgba(255,255,255,0.3)');
-      g.addColorStop(1,    'rgba(255,255,255,0)');
-      c2.beginPath();
-      c2.arc(safeX, safeY, RADIUS, 0, Math.PI * 2);
-      c2.fillStyle = g;
-      c2.fill();
-      const url = canvas.toDataURL();
-      if (url !== currentMask) {
-        currentMask = url;
-        revealDiv.style.maskImage = `url(${url})`;
-        revealDiv.style.webkitMaskImage = `url(${url})`;
-        revealDiv.style.maskSize = '100% 100%';
-        revealDiv.style.webkitMaskSize = '100% 100%';
-      }
-    }
-
-    // Mouse events
-    window.addEventListener('mousemove', e => { rawX = e.clientX; rawY = e.clientY; }, { passive: true });
-    window.addEventListener('mouseleave', () => {
-      rawX = -999; rawY = -999;
-      revealDiv.style.maskImage = 'none';
-      revealDiv.style.webkitMaskImage = 'none';
-    });
-
-    // Touch events
-    const hero = document.querySelector('.hero');
-    const touchHint = document.getElementById('touchHint');
-    let touchActive = false;
-
-    hero.addEventListener('touchstart', e => {
-      touchActive = true;
-      if (touchHint) touchHint.style.opacity = '0';
-      const t = e.touches[0];
-      rawX = t.clientX; rawY = t.clientY;
-    }, { passive: true });
-
-    hero.addEventListener('touchmove', e => {
-      const t = e.touches[0];
-      rawX = t.clientX; rawY = t.clientY;
-    }, { passive: true });
-
-    hero.addEventListener('touchend', () => {
-      setTimeout(() => {
-        rawX = -999; rawY = -999;
-        revealDiv.style.maskImage = 'none';
-        revealDiv.style.webkitMaskImage = 'none';
-      }, 900);
-    }, { passive: true });
-
-    // Gyroscope support for mobile
-    if (isTouch && typeof DeviceOrientationEvent !== 'undefined') {
-      const requestGyro = () => {
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-          DeviceOrientationEvent.requestPermission().then(perm => {
-            if (perm === 'granted') enableGyro();
-          }).catch(() => {});
-        } else {
-          enableGyro();
-        }
-      };
-      const enableGyro = () => {
-        window.addEventListener('deviceorientation', e => {
-          if (touchActive) return;
-          if (e.gamma == null || e.beta == null) return;
-          const gx = Math.max(-30, Math.min(30, e.gamma));
-          const gy = Math.max(-30, Math.min(30, e.beta - 25));
-          rawX = winW * 0.5 + (gx / 30) * winW * 0.45;
-          rawY = winH * 0.5 + (gy / 30) * winH * 0.45;
-        }, { passive: true });
-      };
-      document.addEventListener('touchstart', requestGyro, { once: true, passive: true });
-    }
-
-    function loop() {
-      smX += (rawX - smX) * 0.1;
-      smY += (rawY - smY) * 0.1;
-      const valid = rawX !== -999 && smX > -300;
-      if (valid) applyMask(smX, smY);
-      requestAnimationFrame(loop);
-    }
-    loop();
-
-    // ── SCROLL REVEAL ──
-    const srEls = document.querySelectorAll('.sr');
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('visible');
-          io.unobserve(e.target);
-        }
-      });
-    }, { threshold: 0.12 });
-    srEls.forEach(el => io.observe(el));
-
-    // ── WEBGL ANIMATION ──
-    function initWebGL() {
-      const container = document.getElementById('webgl-mount');
-      if (!container) return;
-
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      container.appendChild(renderer.domElement);
-
-      const vertexShader = `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `;
-
-      const fragmentShader = `
-        uniform float u_time;
-        uniform vec2 u_resolution;
-        varying vec2 vUv;
-
-        vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
-        float snoise(vec2 v){
-          const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
-          vec2 i  = floor(v + dot(v, C.yy) );
-          vec2 x0 = v - i + dot(i, C.xx);
-          vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-          vec4 x12 = x0.xyxy + C.xxzz;
-          x12.xy -= i1;
-          i = mod(i, 289.0);
-          vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
-          vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-          m = m*m; m = m*m;
-          vec3 x = 2.0 * fract(p * C.www) - 1.0;
-          vec3 h = abs(x) - 0.5;
-          vec3 ox = floor(x + 0.5);
-          vec3 a0 = x - ox;
-          m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
-          vec3 g = vec3(0.0);
-          g.x  = a0.x  * x0.x  + h.x  * x0.y;
-          g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-          return 130.0 * dot(m, g);
-        }
-
-        void main() {
-          vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-          vec2 st = uv - 0.5;
-          st.x *= u_resolution.x / u_resolution.y;
-
-          vec2 warpedSt = st + vec2(
-            snoise(st * 2.0 + u_time * 0.1),
-            snoise(st * 2.0 - u_time * 0.15)
-          ) * 0.2;
-
-          float n = snoise(warpedSt * 3.0 + u_time * 0.2);
-          float n2 = snoise(warpedSt * 5.0 - u_time * 0.1);
-
-          vec3 bg = vec3(0.03, 0.03, 0.04);
-          vec3 col1 = vec3(0.9, 0.2, 0.0);
-          vec3 col2 = vec3(0.9, 0.7, 0.2);
-          vec3 col3 = vec3(0.1, 0.4, 0.9);
-
-          vec3 color = bg;
-          float dist = length(st);
-          float mask = smoothstep(0.8, 0.1, dist);
-
-          color = mix(color, col1, smoothstep(0.1, 0.8, n) * mask);
-          color = mix(color, col2, smoothstep(0.4, 1.0, n * n2) * mask);
-          color = mix(color, col3, smoothstep(0.5, 1.0, n2) * mask * 0.5);
-          color *= smoothstep(1.0, 0.2, dist * 0.8);
-
-          gl_FragColor = vec4(color, 1.0);
-        }
-      `;
-
-      const geometry = new THREE.PlaneGeometry(2, 2);
-      const material = new THREE.ShaderMaterial({
-        vertexShader,
-        fragmentShader,
-        uniforms: {
-          u_time: { value: 0.0 },
-          u_resolution: { value: new THREE.Vector2(container.clientWidth, container.clientHeight) }
-        }
-      });
-
-      const mesh = new THREE.Mesh(geometry, material);
-      scene.add(mesh);
-      camera.position.z = 1;
-
-      let time = 0;
-      function animate() {
-        requestAnimationFrame(animate);
-        time += 0.016;
-        material.uniforms.u_time.value = time;
-        renderer.render(scene, camera);
-      }
-      animate();
-
-      // Resize handler
-      let resizeTimeout;
-      function handleResize() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-          const width = container.clientWidth;
-          const height = container.clientHeight;
-          renderer.setSize(width, height);
-          material.uniforms.u_resolution.value.set(width, height);
-          camera.aspect = width / height;
-          camera.updateProjectionMatrix();
-        }, 100);
-      }
-      window.addEventListener('resize', handleResize);
-    }
-
-    // Initialize WebGL after DOM load
-    window.addEventListener('load', initWebGL);
-
-  })();
-  </script>
+  // ── SCROLL REVEAL ──
+  const srEls=document.querySelectorAll('.sr');
+  const io=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}});},{threshold:.1});
+  srEls.forEach(el=>io.observe(el));
+})();
+</script>
 </body>
 </html>
