@@ -464,6 +464,13 @@
       font-family:var(--mono);font-size:12px;letter-spacing:0.2em;text-transform:uppercase;
       color:var(--faint);
     }
+    .warrior-diag{
+      position:absolute;bottom:14px;left:14px;z-index:4;
+      font-family:var(--mono);font-size:10px;line-height:1.6;letter-spacing:0.02em;
+      color:rgba(214,220,240,0.55);background:rgba(5,5,7,0.55);
+      border:1px solid var(--line);border-radius:6px;padding:6px 9px;
+      pointer-events:none;white-space:pre;
+    }
     /* will-change only where something actually animates: the stage moves
        via mouse parallax (desktop only) and currentTime updates repaint the
        video itself. Scoped to fine pointers — mobile never animates the
@@ -803,9 +810,6 @@
       animation-duration:14s;
     }
   </style>
-  <!-- GSAP + ScrollTrigger — used only by the warrior video scroll-scrub section -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 </head>
 <body>
 
@@ -1010,15 +1014,13 @@
       <video
         id="warriorVideo"
         class="warrior-video"
-        src="./warrior-optimized.mp4"
         muted
         playsinline
-        webkit-playsinline="true"
-        x5-playsinline="true"
-        disableRemotePlayback
         preload="auto"
         aria-hidden="true"
-      ></video>
+      >
+        <source src="warrior-optimized.mp4" type="video/mp4">
+      </video>
     </div>
 
     <div class="warrior-vignette"></div>
@@ -1028,6 +1030,11 @@
       <h2 class="sec-heading warrior-heading">The <span>Warrior</span></h2>
       <p class="warrior-sub">Scroll to direct the sequence.</p>
     </div>
+
+    <!-- Visible diagnostic readout — shows live video state directly on
+         the page so a deploy issue can be seen without opening devtools.
+         Safe to delete this block once playback is confirmed working. -->
+    <div id="warriorDiag" class="warrior-diag" aria-hidden="true"></div>
   </div>
 </section>
 
@@ -2249,24 +2256,29 @@
 
   // ══════════════════════════════════════════════════
   // SYSTEM 9: WARRIOR CINEMATIC VIDEO
-  // Scroll-scrubbed playback via GSAP ScrollTrigger (video.currentTime
-  // tweened against scroll position) + GSAP-tweened mouse parallax.
+  // Pure vanilla JS — no external library/CDN dependency. Scroll position
+  // drives video.currentTime directly inside a single RAF loop that starts
+  // immediately on page load. There is no "wait for this one event, then
+  // initialize" step anywhere: the loop simply checks the video's actual
+  // readiness (readyState) on every frame and seeks whenever it's safe to,
+  // so there's no single point of failure that can leave it stuck.
   // No autoplay — the video only ever advances via scroll position.
   // ══════════════════════════════════════════════════
   (function setupWarriorSection() {
     const section = document.getElementById('warriorSection');
     const stage   = document.getElementById('warriorStage');
     const video   = document.getElementById('warriorVideo');
+    const diag    = document.getElementById('warriorDiag');
     if (!section || !stage || !video) return;
-
-    video.preload = 'auto';
-    video.load();
 
     const coarsePtr    = window.matchMedia('(pointer:coarse)').matches;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // Video is purely scroll-driven: ensure it never free-runs on its own.
     video.addEventListener('play', () => video.pause());
+    video.addEventListener('error', () => {
+      console.error('[warrior] video element error:', video.error);
+    });
 
     let sectionVisible = false;
     const warriorIO = new IntersectionObserver(entries => {
@@ -2274,178 +2286,89 @@
     }, { threshold: 0 });
     warriorIO.observe(section);
 
-    function initParallax() {
-      if (coarsePtr || reduceMotion) return;
-      const useGSAP = typeof gsap !== 'undefined';
-      const MAX_X = 20, MAX_Y = 10; // px
-
-      if (useGSAP) {
-        window.addEventListener('mousemove', e => {
-          if (!sectionVisible) return;
-          gsap.to(stage, {
-            x: ((e.clientX - innerWidth  / 2) / (innerWidth  / 2)) * MAX_X,
-            y: ((e.clientY - innerHeight / 2) / (innerHeight / 2)) * MAX_Y,
-            duration: 0.6,
-            ease: 'power2.out',
-            overwrite: true
-          });
-        }, { passive: true });
-      } else {
-        // Fallback (no GSAP available): lightweight RAF-lerp parallax.
-        let targetX = 0, targetY = 0, curX = 0, curY = 0;
-        window.addEventListener('mousemove', e => {
-          targetX = ((e.clientX - innerWidth  / 2) / (innerWidth  / 2)) * MAX_X;
-          targetY = ((e.clientY - innerHeight / 2) / (innerHeight / 2)) * MAX_Y;
-        }, { passive: true });
-        (function loop() {
-          if (sectionVisible) {
-            curX += (targetX - curX) * 0.08;
-            curY += (targetY - curY) * 0.08;
-            stage.style.transform = `translate3d(${curX.toFixed(2)}px, ${curY.toFixed(2)}px, 0) scale(1.06)`;
-          }
-          requestAnimationFrame(loop);
-        })();
-      }
+    // ── Live on-page diagnostic ──
+    // Updated continuously so the actual state of the video element is
+    // visible directly on the deployed page, no devtools required.
+    // Delete the #warriorDiag element (and this block) once confirmed working.
+    function updateDiag() {
+      if (!diag) return;
+      const readyNames = ['HAVE_NOTHING','HAVE_METADATA','HAVE_CURRENT_DATA','HAVE_FUTURE_DATA','HAVE_ENOUGH_DATA'];
+      const netNames = ['NETWORK_EMPTY','NETWORK_IDLE','NETWORK_LOADING','NETWORK_NO_SOURCE'];
+      diag.textContent =
+        'src: '        + (video.currentSrc || '(none — check file path/case)') + '\n' +
+        'readyState: ' + video.readyState + ' (' + (readyNames[video.readyState] || '?') + ')\n' +
+        'network: '    + (netNames[video.networkState] || video.networkState) + '\n' +
+        'duration: '   + (isFinite(video.duration) ? video.duration.toFixed(2) + 's' : 'NaN') + '\n' +
+        'currentTime: '+ video.currentTime.toFixed(2) + 's' +
+        (video.error ? '\nERROR: code ' + video.error.code : '');
     }
 
-    function initScrubFallback() {
-      // No GSAP available (CDN blocked/offline) — native scroll-scrub so
-      // the section still behaves correctly: scroll position drives
-      // currentTime, gated on the decoder confirming each seek is done.
-      let duration = 6;
-      video.addEventListener('loadedmetadata', () => {
-        if (isFinite(video.duration) && video.duration > 0) duration = video.duration;
-      });
+    // ── Scroll-driven scrubbing ──
+    // duration defaults to the known 6s runtime until the browser reports
+    // a real one, so scrubbing is correct from frame one either way.
+    let duration = 6;
+    video.addEventListener('loadedmetadata', () => {
+      if (isFinite(video.duration) && video.duration > 0) duration = video.duration;
+    });
 
-      const hasRVFC = typeof video.requestVideoFrameCallback === 'function';
-      const LERP     = coarsePtr ? 0.3 : 0.5;
-      const SEEK_EPS = 0.02;
+    let targetTime = 0; // where scroll says we should be
 
-      let targetTime = 0, shownTime = 0, seekBusy = false;
+    function readScrollProgress() {
+      const rect      = section.getBoundingClientRect();
+      const pinHeight = rect.height - window.innerHeight;
+      if (pinHeight <= 0) return null;
+      const progress = clamp(-rect.top / pinHeight, 0, 1);
+      return clamp(progress * duration, 0, Math.max(0, duration - 0.04));
+    }
 
-      function readScrollProgress() {
-        const rect      = section.getBoundingClientRect();
-        const pinHeight = rect.height - window.innerHeight;
-        if (pinHeight <= 0) return null;
-        const progress = clamp(-rect.top / pinHeight, 0, 1);
-        return clamp(progress * duration, 0, Math.max(0, duration - 0.04));
-      }
-      function onScrollOrResize() {
-        const t = readScrollProgress();
-        if (t !== null) targetTime = t;
-      }
-      window.addEventListener('scroll', () => requestAnimationFrame(onScrollOrResize), { passive: true });
-      window.addEventListener('resize', () => requestAnimationFrame(onScrollOrResize), { passive: true });
+    function onScrollOrResize() {
+      const t = readScrollProgress();
+      if (t !== null) targetTime = t;
+    }
+    window.addEventListener('scroll', onScrollOrResize, { passive: true });
+    window.addEventListener('resize', onScrollOrResize, { passive: true });
+    {
       const t0 = readScrollProgress();
-      if (t0 !== null) { targetTime = t0; shownTime = t0; }
+      if (t0 !== null) targetTime = t0;
+    }
 
-      function markSeekDone() { seekBusy = false; }
-      if (!hasRVFC) video.addEventListener('seeked', markSeekDone);
-
-      function seekTo(t) {
-        if (video.readyState < 1 || seekBusy) return;
-        seekBusy = true;
-        video.currentTime = t;
-        if (hasRVFC) video.requestVideoFrameCallback(markSeekDone);
-        setTimeout(() => { seekBusy = false; }, 250);
-      }
-
-      (function scrubLoop() {
-        if (sectionVisible) {
-          shownTime += (targetTime - shownTime) * LERP;
-          if (!seekBusy && Math.abs(shownTime - video.currentTime) > SEEK_EPS) {
-            seekTo(shownTime);
-          }
+    // Single RAF loop, running unconditionally from page load. No event
+    // gate, no "wait for canplaythrough/loadedmetadata then start" step —
+    // it just checks readiness every frame and seeks when it can.
+    // HAVE_CURRENT_DATA (2) is the W3C-correct minimum for currentTime to
+    // be meaningfully seekable.
+    let lastSeekTime = -1;
+    (function scrubLoop() {
+      if (sectionVisible && video.readyState >= 2 && !video.seeking) {
+        if (Math.abs(targetTime - lastSeekTime) > 0.02) {
+          lastSeekTime = targetTime;
+          try { video.currentTime = targetTime; } catch (e) { /* ignore transient seek errors */ }
         }
-        requestAnimationFrame(scrubLoop);
+      }
+      updateDiag();
+      requestAnimationFrame(scrubLoop);
+    })();
+
+    // ── Mouse parallax (desktop only — disabled on coarse/touch pointers) ──
+    if (!coarsePtr && !reduceMotion) {
+      const MAX_X = 20, MAX_Y = 10; // px
+      const LERP  = 0.08;
+      let targetX = 0, targetY = 0, curX = 0, curY = 0;
+
+      window.addEventListener('mousemove', e => {
+        targetX = ((e.clientX - innerWidth  / 2) / (innerWidth  / 2)) * MAX_X;
+        targetY = ((e.clientY - innerHeight / 2) / (innerHeight / 2)) * MAX_Y;
+      }, { passive: true });
+
+      (function parallaxLoop() {
+        if (sectionVisible) {
+          curX += (targetX - curX) * LERP;
+          curY += (targetY - curY) * LERP;
+          stage.style.transform = `translate3d(${curX.toFixed(2)}px, ${curY.toFixed(2)}px, 0) scale(1.06)`;
+        }
+        requestAnimationFrame(parallaxLoop);
       })();
     }
-
-    function initScrubTrigger() {
-      if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-        initScrubFallback();
-        return;
-      }
-      gsap.registerPlugin(ScrollTrigger);
-
-      let timelineBuilt = false;
-      function buildTimeline() {
-        if (timelineBuilt) return; // guard against double-init (event + timeout race)
-        timelineBuilt = true;
-        const duration = (isFinite(video.duration) && video.duration > 0) ? video.duration : 6;
-
-        // Kill any stale ScrollTrigger (e.g. from a prior failed attempt)
-        // before creating the real one, then force a layout refresh so
-        // ScrollTrigger measures the pinned section correctly.
-        ScrollTrigger.getAll().forEach(t => t.kill());
-
-        gsap.to(video, {
-          currentTime: duration,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top top',
-            end: () => '+=' + (section.offsetHeight - window.innerHeight),
-            scrub: 0.5,
-            invalidateOnRefresh: true
-          }
-        });
-
-        ScrollTrigger.refresh();
-      }
-
-      video.load();
-
-      // ── TEMPORARY DEBUG LOGGING ──
-      // Remove once the Cloudflare deploy is confirmed working. If these
-      // never print in the deployed console, the video isn't loading —
-      // check the network tab for the request to warrior-optimized.mp4.
-      video.addEventListener('loadedmetadata', () => {
-        console.log('[warrior] Duration:', video.duration);
-      });
-      video.addEventListener('canplaythrough', () => {
-        console.log('[warrior] Video Ready, readyState:', video.readyState);
-      });
-
-      // Gate on canplaythrough — confirms the video is actually seekable,
-      // not just that metadata has loaded. Kept a timeout safety net
-      // alongside it: canplaythrough is a browser heuristic and isn't
-      // guaranteed to fire promptly (or at all) on every connection, and a
-      // single-event dependency with no fallback is exactly what caused
-      // the frozen-on-frame-1 issue last time.
-      if (video.readyState >= 4) {
-        buildTimeline();
-      } else {
-        video.addEventListener('canplaythrough', buildTimeline, { once: true });
-        setTimeout(buildTimeline, 3000);
-      }
-
-      video.addEventListener('error', e => {
-        console.error('Warrior video failed to load:', e, '— check that the file was deployed alongside the page at the exact path/case used in src.');
-      });
-    }
-
-    // GSAP/ScrollTrigger load via <script defer> in <head>, so they are not
-    // guaranteed to exist yet when this inline script runs. Wait for window
-    // 'load' (with a short poll as extra margin), then fall back to native
-    // scrubbing if the library still never became available.
-    function whenReady(fn) {
-      if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') { fn(); return; }
-      let tries = 0;
-      const poll = setInterval(() => {
-        tries++;
-        if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-          clearInterval(poll);
-          fn();
-        } else if (tries > 40) { // ~4s grace period
-          clearInterval(poll);
-          fn(); // proceeds; initScrubTrigger() falls back internally if still missing
-        }
-      }, 100);
-    }
-
-    whenReady(initScrubTrigger);
-    initParallax();
   })();
 
 })();
