@@ -2280,9 +2280,39 @@
       console.error('[warrior] video element error:', video.error);
     });
 
+    // ── Mobile unlock ──
+    // iOS Safari (and several Android browsers, especially on cellular)
+    // suspend video loading/decoding entirely until a genuine user gesture
+    // occurs — this is documented Apple/WebKit behavior, not a bug in this
+    // code. Without a gesture, readyState can stay stuck at HAVE_NOTHING/
+    // HAVE_METADATA forever, which is exactly "frozen on frame 1": the
+    // scrub loop's readyState>=2 gate below never passes. A muted, silent
+    // play()-then-immediately-pause() inside the very first touch/pointer
+    // event is the standard way to "unlock" decoding without the video
+    // ever visibly auto-playing. Desktop doesn't need this (no such
+    // restriction), so it's a no-op there if it ever runs.
+    let mobileUnlocked = false;
+    function unlockMobileVideo() {
+      if (mobileUnlocked) return;
+      mobileUnlocked = true;
+      video.load();
+      const p = video.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => video.pause()).catch(() => { /* blocked — scrubLoop will keep retrying readiness regardless */ });
+      } else {
+        video.pause();
+      }
+    }
+    if (coarsePtr) {
+      window.addEventListener('touchstart', unlockMobileVideo, { passive: true, once: true });
+      window.addEventListener('pointerdown', unlockMobileVideo, { passive: true, once: true });
+      window.addEventListener('scroll', unlockMobileVideo, { passive: true, once: true });
+    }
+
     let sectionVisible = false;
     const warriorIO = new IntersectionObserver(entries => {
       sectionVisible = entries[0].isIntersecting;
+      if (sectionVisible && coarsePtr) unlockMobileVideo();
     }, { threshold: 0 });
     warriorIO.observe(section);
 
@@ -2300,6 +2330,7 @@
         'network: '    + (netNames[video.networkState] || video.networkState) + '\n' +
         'duration: '   + (isFinite(video.duration) ? video.duration.toFixed(2) + 's' : 'NaN') + '\n' +
         'currentTime: '+ video.currentTime.toFixed(2) + 's' +
+        (coarsePtr ? '\nmobile unlock: ' + (mobileUnlocked ? 'fired' : 'waiting for touch/scroll') : '') +
         (video.error ? '\nERROR: code ' + video.error.code : '');
     }
 
