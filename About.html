@@ -1016,7 +1016,7 @@
         webkit-playsinline="true"
         x5-playsinline="true"
         disableRemotePlayback
-        preload="metadata"
+        preload="auto"
         aria-hidden="true"
       ></video>
     </div>
@@ -2365,7 +2365,10 @@
       }
       gsap.registerPlugin(ScrollTrigger);
 
+      let timelineBuilt = false;
       function buildTimeline() {
+        if (timelineBuilt) return; // guard against double-init (event + timeout race)
+        timelineBuilt = true;
         const duration = (isFinite(video.duration) && video.duration > 0) ? video.duration : 6;
         gsap.to(video, {
           currentTime: duration,
@@ -2384,6 +2387,15 @@
         buildTimeline();
       } else {
         video.addEventListener('loadedmetadata', buildTimeline, { once: true });
+        // On some CDNs/hosts, 'loadedmetadata' can be slow to fire or — in
+        // rare cases (range-request quirks, cold cache) — never fire at
+        // all. Without a fallback the scrub would silently never
+        // initialize and the video would sit frozen on frame 1 forever.
+        // Force initialization after a short grace period regardless.
+        setTimeout(buildTimeline, 3000);
+        video.addEventListener('error', () => {
+          console.warn('Warrior video failed to load — check that warrior-optimized.mp4 was deployed alongside the page (case-sensitive path).');
+        });
       }
     }
 
