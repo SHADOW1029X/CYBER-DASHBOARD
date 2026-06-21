@@ -256,6 +256,19 @@
     .page-tab.gl-ready .page-tab-gl{opacity:0.55;}
     .page-tab.gl-ready:hover .page-tab-gl,.page-tab.gl-ready.active .page-tab-gl{opacity:0.85;}
     .page-tab.nogl .page-tab-gl{display:none;}
+    /* CSS-only stand-in for tabs that didn't get a WebGL context under the
+       MAX_GL_TABS cap (see Aether Drive setup below) — approximates the
+       shader's deep-navy/blue/cyan plasma palette with layered gradients
+       so capped-out tabs read as intentionally styled, not unstyled. */
+    .page-tab.nogl::before{
+      content:"";position:absolute;inset:0;z-index:0;border-radius:inherit;
+      background:
+        radial-gradient(circle at 30% 120%,rgba(34,198,230,.55),transparent 60%),
+        radial-gradient(circle at 80% -20%,rgba(63,140,255,.5),transparent 65%),
+        linear-gradient(115deg,rgba(10,20,90,.35),rgba(4,8,35,.5));
+      opacity:0.55;transition:opacity .3s ease;
+    }
+    .page-tab.nogl:hover::before,.page-tab.nogl.active::before{opacity:0.85;}
     .page-tab-label{position:relative;z-index:1;}
     .page-panel{display:none;}
     .page-panel[hidden]{display:none;}
@@ -2434,16 +2447,13 @@
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Browsers cap concurrent WebGL contexts per page (commonly ~8–16,
-    // lower on mobile GPUs), and this page may also run other WebGL
-    // surfaces (the hero/engine sections reference a Three.js background
-    // elsewhere in this system). Six contexts for six nav pills is a
-    // disproportionate share of that budget. Cap how many of these
-    // decorative per-tab contexts we actually create; tabs beyond the cap
-    // fall back to the plain `.nogl` pill styling instead of competing for
-    // a scarce resource or silently failing context creation later.
-    const MAX_GL_TABS = 4;
-    let glTabsCreated = 0;
+    // Each tab gets its own tiny WebGL context: a single fullscreen
+    // triangle with no textures/geometry, so the GPU/memory cost per
+    // context is trivial, and this is the only WebGL usage on the page.
+    // Real context exhaustion is still handled gracefully — if
+    // getContext('webgl') ever returns null (very old/constrained
+    // devices, or context creation genuinely failing), that specific tab
+    // falls back to .nogl below rather than erroring.
 
     const VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
     const FS = `
@@ -2499,12 +2509,9 @@
       const canvas = btn.querySelector('.page-tab-gl');
       if (!canvas) return;
 
-      if (glTabsCreated >= MAX_GL_TABS) { btn.classList.add('nogl'); return; }
-
       const gl = canvas.getContext('webgl', { alpha: false, antialias: false, powerPreference: 'low-power' });
 
       if (!gl) { btn.classList.add('nogl'); return; }
-      glTabsCreated++;
 
       const vs = compile(gl, gl.VERTEX_SHADER, VS);
       const fs = compile(gl, gl.FRAGMENT_SHADER, FS);
@@ -2556,7 +2563,6 @@
         e.preventDefault();
         contextLost = true;
         rafId = null;
-        glTabsCreated--;
         btn.classList.remove('gl-ready');
         btn.classList.add('nogl');
       });
