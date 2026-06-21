@@ -146,7 +146,6 @@
       will-change:opacity;
     }
 
-
     /* Vignette sits above images, below content */
     .hero-vignette{position:absolute;inset:0;z-index:40;pointer-events:none;
     background:
@@ -392,7 +391,6 @@
     .sr.visible{opacity:1;transform:none;}
     .sr-d1{transition-delay:.1s;}.sr-d2{transition-delay:.2s;}.sr-d3{transition-delay:.3s;}
 
-
     /* ── PRELOADER ── */
     #pre{
       position:fixed;inset:0;z-index:9999;background:#050507;
@@ -596,15 +594,12 @@
     @supports (height: 100dvh){
       .pinStick{height:100dvh;}
     }
-    /* Pinned-section scroll distance, in viewport heights. Plain vh is
-       based on the LARGEST possible viewport (address bar hidden), but
-       the user actually scrolls through the SMALLEST one (address bar
-       visible) — on iOS/Android that gap is real and growing through a
-       320vh section means the pin releases early or the scrub overshoots
-       right as the browser chrome show/hides mid-scroll. dvh tracks the
-       viewport that's actually on screen, so the math the JS scrub
-       functions do against getBoundingClientRect() stays in sync with
-       what the user is actually scrolling through. */
+    /* Plain vh is based on the LARGEST viewport (address bar hidden), but
+       the user scrolls through the SMALLEST one (bar visible) — on
+       iOS/Android that gap means the pin can release early or the scrub
+       can overshoot as the browser chrome shows/hides mid-scroll. dvh
+       tracks the viewport actually on screen, keeping the JS scrub math
+       (getBoundingClientRect()) in sync with what's really scrolling. */
     .pin-320{height:320vh;}
     .pin-420{height:420vh;}
     @supports (height: 100dvh){
@@ -691,15 +686,13 @@
       transition:width .4s var(--ease);
     }
 
-    /* Touch devices can simulate :hover on tap and then leave it "stuck"
-       until the next tap elsewhere — common on mobile WebKit/Blink. The
-       rules below are all purely decorative micro-interactions (tints,
-       borders, glows); resetting them here for devices with no real,
-       continuous hover capability removes the stuck-state bug without
-       touching the rules themselves or affecting fine-pointer/mouse
-       behavior at all. (.grid-item and .page-tab's Aether shader heat
-       are intentionally excluded — both already drive their visual state
-       from dedicated touch/JS event paths rather than CSS :hover alone.) */
+    /* Touch devices can simulate :hover on tap and leave it "stuck" until
+       the next tap elsewhere (common on mobile WebKit/Blink). The rules
+       below are purely decorative (tints, borders, glows); resetting them
+       for no-real-hover devices removes the stuck state without touching
+       the rules themselves or fine-pointer/mouse behavior. (.grid-item and
+       .page-tab's shader heat are excluded — both already drive their
+       visual state from dedicated touch/JS paths, not CSS :hover alone.) */
     @media (hover: none){
       .navr a:hover{opacity:.8;}
       .mobile-menu a:hover{color:var(--muted);border-color:transparent;background:none;}
@@ -988,7 +981,6 @@
   <div id="preBar"><i></i></div>
 </div>
 
-
 <!-- ── NAV ── -->
 <nav>
   <div class="nav-brand">NYTHERION<span class="d">.</span></div>
@@ -1046,7 +1038,6 @@
     <div class="scroll-line"></div>
   </div>
 </section>
-
 
 <!-- ── TRUE FOCUS BAND ── -->
 <section id="focus">
@@ -1169,7 +1160,6 @@
   </div>
 </section>
 
-
 <div class="cyber-divider"></div>
 
 <!-- ── WARRIOR CINEMATIC VIDEO (scroll-scrubbed + mouse parallax) ── -->
@@ -1203,7 +1193,6 @@
     <div id="warriorDiag" class="warrior-diag" aria-hidden="true"></div>
   </div>
 </section>
-
 
 <div class="cyber-divider"></div>
 
@@ -1278,7 +1267,6 @@
     <span>WebGL Engine <span class="o">·</span> Edge Workers <span class="o">·</span> Zero Frameworks <span class="o">·</span> Real-time Rendering <span class="o">·</span> D1 Database <span class="o">·</span> Bloom Pass <span class="o">·</span> ARIA Accessible <span class="o">·</span> </span>
   </div>
 </div>
-
 
 <!-- ── ENGINE SCRUB ── -->
 <section class="pin pin-320" id="engineSection">
@@ -1630,12 +1618,11 @@
 
   // ── SHARED SCROLL BUS ──
   // Several independent systems below (progress bar, pipeline scrub, engine
-  // scrub) all need to react to scroll position. Rather than each attaching
-  // its own 'scroll' listener (each of which would schedule its own
-  // requestAnimationFrame and re-trigger style recalcs independently), they
-  // subscribe here once. A single 'scroll' listener schedules a single rAF
-  // per frame that fans out to every subscriber — same visual result, far
-  // fewer redundant event-loop wakeups and rAF callbacks under fast scroll.
+  // scrub) need to react to scroll position. Rather than each attaching its
+  // own 'scroll' listener (each scheduling its own requestAnimationFrame and
+  // re-triggering style recalcs independently), they subscribe here once —
+  // one listener, one rAF per frame, fanned out to every subscriber. Same
+  // visual result, far fewer redundant wakeups under fast scroll.
   const scrollSubscribers = [];
   function onScroll(fn) { scrollSubscribers.push(fn); }
   let scrollRafPending = false;
@@ -1893,7 +1880,6 @@
   }
   spotlightLoop();
 
-
   // ══════════════════════════════════════════════════
   // SYSTEM 1: PRELOADER
   // ══════════════════════════════════════════════════
@@ -1907,17 +1893,11 @@
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) { pre.classList.add('gone'); return; }
 
-    // ── Build the digit-flip counter cells ──
-    // Three fixed-width cells so the layout never reflows as the number
-    // grows from one digit ("0") to three ("100"). Leading cells that
-    // have no digit yet collapse to zero width via the .pc-digit.empty
-    // class below, so the number grows from the right like an odometer
-    // instead of reserving a permanent blank gap on the left.
-    //
-    // #preCount's markup starts as a plain "0" text node (a sane no-JS/
-    // static fallback) — that has to be cleared before appending the
-    // generated cells, or it renders as a literal extra leading zero
-    // alongside the real digits (e.g. "100%" rendering as "0100%").
+    // Three fixed-width cells so layout never reflows (1 digit -> 3 digits).
+    // Empty leading cells collapse via .pc-digit.empty, so the number grows
+    // from the right like an odometer instead of leaving a blank gap.
+    // #preCount's markup starts as a plain "0" (no-JS fallback) — must be
+    // cleared first, or it renders as a literal extra digit ("0100%").
     preCount.textContent = '';
     const DIGITS = 3;
     const cells = [];
@@ -1942,24 +1922,19 @@
         const c = cells[i];
         if (ch !== c.shown) {
           c.el.classList.toggle('empty', ch === '');
-          // Slide the old digit up and out, drop in the new one beneath —
-          // a quick flip rather than an instant text replace. `outgoing`
-          // captures the specific element being replaced *right now*; the
-          // rAF below must act on this exact element, not on c.i read
-          // fresh when it fires — c.i can already have moved on to a
-          // newer digit by then (changes happen on nearly every animation
-          // frame during the fastest part of the count-up), which
-          // previously applied the exit transform to the wrong element.
+          // Quick flip rather than an instant text replace. `outgoing` must
+          // capture this exact element now — c.i can move on to a newer
+          // digit before the rAF below fires (changes happen almost every
+          // frame during the fast part of the count-up), which previously
+          // applied the exit transform to the wrong element.
           const outgoing = c.i;
 
-          // If an earlier flip's outgoing element is still waiting on its
-          // own removal timer, drop it immediately rather than letting it
-          // ride out the full exit duration. Once a newer digit starts
-          // sliding in, the older one is already hidden behind it (this
-          // cell clips with overflow:hidden), so nothing is lost visually
-          // — but during the fast part of the count-up (digit changes
-          // roughly every 17ms, far quicker than the 340ms exit anim)
-          // skipping this would let dozens of stale nodes pile up at once.
+          // Drop any earlier outgoing element still on its removal timer
+          // immediately, rather than letting it ride out the full exit
+          // duration — it's already hidden behind the newer one (cell
+          // clips via overflow:hidden) so nothing is lost visually, but
+          // skipping this let dozens of stale nodes pile up when digits
+          // change every ~17ms, far faster than the 340ms exit animation.
           if (c.pendingRemoval && c.pendingRemoval !== outgoing) {
             clearTimeout(c.pendingRemovalTimer);
             if (c.pendingRemoval.parentNode) c.pendingRemoval.remove();
@@ -2623,12 +2598,10 @@
 
   // ══════════════════════════════════════════════════
   // SYSTEM 9: WARRIOR CINEMATIC VIDEO
-  // Pure vanilla JS — no external library/CDN dependency. Scroll position
-  // drives video.currentTime directly inside a single RAF loop that starts
-  // immediately on page load. There is no "wait for this one event, then
-  // initialize" step anywhere: the loop simply checks the video's actual
-  // readiness (readyState) on every frame and seeks whenever it's safe to,
-  // so there's no single point of failure that can leave it stuck.
+  // Pure vanilla JS, no library/CDN dependency. A single RAF loop (started
+  // immediately on load) drives video.currentTime from scroll position,
+  // checking readyState every frame and seeking whenever it's safe — no
+  // "wait for one event then init" step, so nothing can leave it stuck.
   // No autoplay — the video only ever advances via scroll position.
   // ══════════════════════════════════════════════════
   (function setupWarriorSection() {
@@ -2687,16 +2660,13 @@
       setTimeout(unlockMobileVideo, 1500);
     }
 
-    // sectionVisible is used only to pause the (non-critical) parallax
-    // loop for perf — NOT to gate the scrub seek itself. The scrub's own
-    // readScrollProgress() below already correctly no-ops when the
-    // section is out of scroll range via getBoundingClientRect(), so
-    // depending on a second, separate visibility signal (IntersectionObserver)
-    // for the seek was a redundant, riskier single point of failure: if
-    // that observer were ever slow to fire its first callback on a given
-    // mobile browser/layout combo (a real quirk with position:sticky
-    // inside tall pinned containers), the seek would never run even
-    // though scroll position itself was correct the whole time.
+    // sectionVisible only pauses the (non-critical) parallax loop for perf
+    // — NOT the scrub seek itself, since readScrollProgress() below already
+    // no-ops correctly out of range via getBoundingClientRect(). Gating the
+    // seek on IntersectionObserver too would be a redundant single point of
+    // failure: a slow first callback (a real position:sticky quirk inside
+    // tall pinned containers on some mobile browsers) could leave the seek
+    // stuck even though scroll position was correct the whole time.
     let sectionVisible = false;
     const warriorIO = new IntersectionObserver(entries => {
       sectionVisible = entries[0].isIntersecting;
