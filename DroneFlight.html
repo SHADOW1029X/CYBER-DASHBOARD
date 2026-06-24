@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRONE — Cinematic Flight</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --ink: #0a0c12;
+    --sky-top: #050810;
+    --sky-mid: #0d1a3a;
+    --sky-low: #1a0a2e;
+    --accent: #4fc3f7;
+    --accent2: #7c4dff;
+    --text: rgba(255,255,255,0.88);
+    --muted: rgba(255,255,255,0.38);
+    --ff-display: 'Space Grotesk', system-ui, sans-serif;
+    --ff-body: 'Inter', system-ui, sans-serif;
+  }
+
+  html { scroll-behavior: auto; }
+
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: var(--ff-body);
+    overflow-x: hidden;
+  }
+
+  /* ─── Canvas ─────────────────────────────────── */
+  #canvas-container {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+  #canvas-container canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* ─── Scroll scaffold ─────────────────────────── */
+  #scroll-track {
+    position: relative;
+    z-index: 1;
+    height: 600vh;
+    pointer-events: none;
+  }
+
+  /* ─── HUD overlay ─────────────────────────────── */
+  #hud {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .progress-bar-wrap {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: rgba(255,255,255,0.06);
+    z-index: 10;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    width: 0%;
+    transition: width 0.05s linear;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* ─── Section cards ───────────────────────────── */
+  .sections {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .section-card {
+    position: absolute;
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    max-width: 480px;
+  }
+  .section-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .section-card .eyebrow {
+    font-family: var(--ff-display);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    opacity: 0.8;
+  }
+  .section-card h2 {
+    font-family: var(--ff-display);
+    font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+  }
+  .section-card p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  /* card positions */
+  #card-0 { bottom: 14vh; left: 8vw; }
+  #card-1 { top: 22vh; right: 8vw; text-align: right; }
+  #card-2 { bottom: 18vh; left: 8vw; }
+  #card-3 { top: 28vh; right: 8vw; text-align: right; }
+  #card-4 { bottom: 50%; left: 50%; transform: translateX(-50%) translateY(50%); text-align: center; max-width: 600px; }
+
+  /* ─── Loading screen ──────────────────────────── */
+  #loader {
+    position: fixed;
+    inset: 0;
+    background: var(--ink);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    transition: opacity 0.8s ease;
+  }
+  #loader.fade-out { opacity: 0; pointer-events: none; }
+  .loader-ring {
+    width: 60px; height: 60px;
+    border: 2px solid rgba(255,255,255,0.08);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  .loader-label {
+    font-family: var(--ff-display);
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── Scroll hint ─────────────────────────────── */
+  #scroll-hint {
+    position: fixed;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 1;
+    transition: opacity 0.5s;
+  }
+  #scroll-hint.hidden { opacity: 0; }
+  .hint-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .hint-arrow {
+    width: 18px; height: 28px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hint-arrow::after {
+    content: '';
+    position: absolute;
+    top: 4px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 6px;
+    background: var(--accent);
+    border-radius: 2px;
+    animation: bounce 1.4s ease infinite;
+  }
+  @keyframes bounce {
+    0%,100% { top: 4px; opacity: 1; }
+    80% { top: 14px; opacity: 0; }
+  }
+
+  /* ─── Corner drone data ───────────────────────── */
+  #drone-data {
+    position: fixed;
+    top: 24px; right: 24px;
+    z-index: 4;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    color: rgba(79,195,247,0.6);
+    letter-spacing: 0.04em;
+    line-height: 1.7;
+    pointer-events: none;
+    text-align: right;
+    opacity: 0;
+    transition: opacity 1s;
+  }
+  #drone-data.visible { opacity: 1; }
+
+  @media (max-width: 600px) {
+    .section-card { max-width: 88vw; }
+    #card-1, #card-3 { right: 4vw; }
+    #card-0, #card-2 { left: 4vw; }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Space+Mono&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loader">
+  <div class="loader-ring"></div>
+  <div class="loader-label">Loading Drone</div>
+</div>
+
+<!-- Progress -->
+<div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+
+<!-- 3D Canvas -->
+<div id="canvas-container"></div>
+
+<!-- Scroll scaffold -->
+<div id="scroll-track"></div>
+
+<!-- Sections overlay -->
+<div class="sections">
+  <div class="section-card" id="card-0">
+    <div class="eyebrow">Mission Start</div>
+    <h2>Departure<br>Protocol</h2>
+    <p>Rotors spin. Systems check green.<br>Liftoff commences.</p>
+  </div>
+  <div class="section-card" id="card-1">
+    <div class="eyebrow">Altitude: 120m</div>
+    <h2>Night<br>Sector</h2>
+    <p>Crossing the outer grid at speed.<br>Sensors wide open.</p>
+  </div>
+  <div class="section-card" id="card-2">
+    <div class="eyebrow">Velocity: 94 km/h</div>
+    <h2>Deep<br>Traverse</h2>
+    <p>Banking into the thermal corridor.<br>Wind vector nominal.</p>
+  </div>
+  <div class="section-card" id="card-3">
+    <div class="eyebrow">Signal: Strong</div>
+    <h2>Orbit<br>Sequence</h2>
+    <p>Wide arc over the target zone.<br>Mapping in progress.</p>
+  </div>
+  <div class="section-card" id="card-4">
+    <div class="eyebrow">Mission Complete</div>
+    <h2>Return to<br>Base</h2>
+    <p>Descending gracefully. All systems nominal.<br>Flight log archived.</p>
+  </div>
+</div>
+
+<!-- Drone telemetry HUD -->
+<div id="drone-data">
+  ALT <span id="hud-alt">---</span>m<br>
+  SPD <span id="hud-spd">---</span> km/h<br>
+  HDG <span id="hud-hdg">---</span>°<br>
+  BAT 100%
+</div>
+
+<!-- Scroll hint -->
+<div id="scroll-hint">
+  <div class="hint-arrow"></div>
+  <div class="hint-label">Scroll to fly</div>
+</div>
+
+<!-- Three.js + GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ─── Scene setup ──────────────────────────────── */
+const container = document.getElementById('canvas-container');
+const W = window.innerWidth, H = window.innerHeight;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W, H);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.outputEncoding = THREE.sRGBEncoding;
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x08122a, 0.022);
+
+const camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 500);
+camera.position.set(0, 2, 10);
+
+/* ─── Lights ───────────────────────────────────── */
+const ambient = new THREE.AmbientLight(0x1a2a4a, 2.0);
+scene.add(ambient);
+
+const sun = new THREE.DirectionalLight(0x88b8ff, 3.5);
+sun.position.set(30, 60, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.near = 1;
+sun.shadow.camera.far = 200;
+sun.shadow.camera.left = -40;
+sun.shadow.camera.right = 40;
+sun.shadow.camera.top = 40;
+sun.shadow.camera.bottom = -40;
+scene.add(sun);
+
+const rimLight = new THREE.DirectionalLight(0x7c4dff, 2.2);
+rimLight.position.set(-20, 10, -30);
+scene.add(rimLight);
+
+const fillLight = new THREE.PointLight(0x4fc3f7, 3, 40);
+fillLight.position.set(0, 5, 0);
+scene.add(fillLight);
+
+/* ─── Sky gradient background ──────────────────── */
+function makeSkyGradient() {
+  const cvs = document.createElement('canvas');
+  cvs.width = 2; cvs.height = 512;
+  const ctx = cvs.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, 512);
+  g.addColorStop(0,   '#03060f');
+  g.addColorStop(0.3, '#0a1535');
+  g.addColorStop(0.6, '#1a0a3a');
+  g.addColorStop(1,   '#0d0d1a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 2, 512);
+  const tex = new THREE.CanvasTexture(cvs);
+  return tex;
+}
+scene.background = makeSkyGradient();
+
+/* ─── Stars ────────────────────────────────────── */
+(function buildStars() {
+  const count = 2200;
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(count * 3);
+  const col = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const r = 220;
+    pos[i*3]   = (Math.random()-0.5) * r * 2;
+    pos[i*3+1] = (Math.random()-0.5) * r * 1.5;
+    pos[i*3+2] = (Math.random()-0.5) * r * 2;
+    const bright = 0.4 + Math.random() * 0.6;
+    const blue = Math.random() > 0.7;
+    col[i*3]   = blue ? bright * 0.7 : bright;
+    col[i*3+1] = blue ? bright * 0.8 : bright;
+    col[i*3+2] = blue ? bright       : bright * 0.9;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+  const mat = new THREE.PointsMaterial({ size: 0.35, vertexColors: true, transparent: true, opacity: 0.85 });
+  scene.add(new THREE.Points(geo, mat));
+})();
+
+/* ─── Floating particles (dust / embers) ───────── */
+const particleCount = 600;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(particleCount * 3);
+const pSpd = new Float32Array(particleCount);
+for (let i = 0; i < particleCount; i++) {
+  pPos[i*3]   = (Math.random()-0.5) * 80;
+  pPos[i*3+1] = (Math.random()-0.5) * 40;
+  pPos[i*3+2] = (Math.random()-0.5) * 80;
+  pSpd[i] = 0.004 + Math.random() * 0.008;
+}
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+const pMat = new THREE.PointsMaterial({ size: 0.12, color: 0x4fc3f7, transparent: true, opacity: 0.4 });
+const particles = new THREE.Points(pGeo, pMat);
+scene.add(particles);
+
+/* ─── Distant city silhouette (boxes) ─────────── */
+(function buildCity() {
+  const mat = new THREE.MeshStandardMaterial({ color: 0x0a1020, roughness: 1, metalness: 0 });
+  const rows = 80;
+  for (let i = 0; i < rows; i++) {
+    const h = 2 + Math.random() * 12;
+    const w = 1.5 + Math.random() * 3;
+    const d = 1.5 + Math.random() * 3;
+    const geo = new THREE.BoxGeometry(w, h, d);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(
+      (Math.random()-0.5) * 200,
+      -12 + h/2,
+      -80 - Math.random() * 80
+    );
+    mesh.castShadow = false;
+    scene.add(mesh);
+  }
+  // ground plane
+  const gGeo = new THREE.PlaneGeometry(600, 600);
+  const gMat = new THREE.MeshStandardMaterial({ color: 0x06090f, roughness: 0.95, metalness: 0.1 });
+  const ground = new THREE.Mesh(gGeo, gMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -13;
+  ground.receiveShadow = true;
+  scene.add(ground);
+})();
+
+/* ─── Grid lines (runway feel) ─────────────────── */
+(function buildGrid() {
+  const mat = new THREE.LineBasicMaterial({ color: 0x1a2a4a, transparent: true, opacity: 0.35 });
+  const size = 200, step = 8;
+  for (let i = -size; i <= size; i += step) {
+    const pts = [new THREE.Vector3(i, -13, -size), new THREE.Vector3(i, -13, size)];
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+    const pts2 = [new THREE.Vector3(-size, -13, i), new THREE.Vector3(size, -13, i)];
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts2), mat));
+  }
+})();
+
+/* ─── Flight path ──────────────────────────────── */
+const pathPoints = [
+  new THREE.Vector3(  0,   0,   18),
+  new THREE.Vector3( -8,   3,   10),
+  new THREE.Vector3(-18,   6,   -2),
+  new THREE.Vector3(-12,  10,  -14),
+  new THREE.Vector3(  0,   8,  -22),
+  new THREE.Vector3( 14,   5,  -30),
+  new THREE.Vector3( 22,   1,  -42),
+  new THREE.Vector3( 16,  -2,  -54),
+  new THREE.Vector3(  2,   4,  -64),
+  new THREE.Vector3(-10,   9,  -74),
+  new THREE.Vector3(-18,   6,  -85),
+  new THREE.Vector3( -6,   2,  -96),
+  new THREE.Vector3( 10,   0, -105),
+  new THREE.Vector3( 20,   4, -118),
+  new THREE.Vector3(  8,   8, -128),
+  new THREE.Vector3( -4,   4, -138),
+  new THREE.Vector3(  0,   0, -148),
+];
+const flightCurve = new THREE.CatmullRomCurve3(pathPoints, false, 'catmullrom', 0.5);
+
+/* Debug: optional path visualizer (invisible) */
+// const tubeGeo = new THREE.TubeGeometry(flightCurve, 200, 0.05, 8, false);
+// scene.add(new THREE.Mesh(tubeGeo, new THREE.MeshBasicMaterial({ color: 0xff0000 })));
+
+/* ─── Camera rig ───────────────────────────────── */
+const camTarget = new THREE.Vector3();
+const camPos    = new THREE.Vector3();
+let camLag      = { x: 0, y: 0, z: 0 };
+
+/* ─── State ────────────────────────────────────── */
+let drone = null;
+let mixer = null;
+let scrollProgress = 0; // 0→1
+const dummyFwd = new THREE.Object3D();
+scene.add(dummyFwd);
+
+/* ─── GSAP scroll ──────────────────────────────── */
+const scrollState = { t: 0 };
+ScrollTrigger.create({
+  trigger: '#scroll-track',
+  start: 'top top',
+  end: 'bottom bottom',
+  scrub: 1.4,
+  onUpdate: self => {
+    scrollState.t = self.progress;
+    document.getElementById('progress-bar').style.width = (self.progress * 100) + '%';
+    updateSectionCards(self.progress);
+    updateHUD(self.progress);
+  }
+});
+
+/* ─── Section card visibility ─────────────────── */
+const cardRanges = [
+  [0.00, 0.18],
+  [0.20, 0.40],
+  [0.42, 0.62],
+  [0.64, 0.82],
+  [0.85, 1.00],
+];
+
+function updateSectionCards(t) {
+  cardRanges.forEach(([start, end], i) => {
+    const el = document.getElementById(`card-${i}`);
+    if (!el) return;
+    if (t >= start && t <= end) {
+      el.classList.add('visible');
+    } else {
+      el.classList.remove('visible');
+    }
+  });
+}
+
+function updateHUD(t) {
+  const pt = flightCurve.getPoint(t);
+  const alt = Math.round((pt.y + 14) * 8.5 + 80);
+  const spd = Math.round(60 + Math.sin(t * Math.PI * 4) * 20 + t * 40);
+  const hdg = Math.round((t * 720) % 360);
+  document.getElementById('hud-alt').textContent = alt;
+  document.getElementById('hud-spd').textContent = spd;
+  document.getElementById('hud-hdg').textContent = String(hdg).padStart(3, '0');
+}
+
+/* ─── GLB Loader ───────────────────────────────── */
+const loader = new THREE.GLTFLoader();
+
+// DRACOLoader (optional, for compressed meshes)
+try {
+  const draco = new THREE.DRACOLoader();
+  draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/libs/draco/');
+  loader.setDRACOLoader(draco);
+} catch(e) {}
+
+loader.load(
+  '/mnt/user-data/uploads/k07_drone.glb',
+  (gltf) => {
+    drone = gltf.scene;
+    drone.scale.setScalar(1.4);
+
+    // Enable shadows & nice materials
+    drone.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (child.material) {
+          child.material.envMapIntensity = 1.2;
+        }
+      }
+    });
+
+    scene.add(drone);
+
+    // AnimationMixer — play ALL clips, loop forever
+    if (gltf.animations && gltf.animations.length > 0) {
+      mixer = new THREE.AnimationMixer(drone);
+      gltf.animations.forEach(clip => {
+        const action = mixer.clipAction(clip);
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.play();
+      });
+    }
+
+    // Initial placement
+    const startPt = flightCurve.getPoint(0);
+    drone.position.copy(startPt);
+
+    // Hide loader
+    document.getElementById('loader').classList.add('fade-out');
+    document.getElementById('drone-data').classList.add('visible');
+    setTimeout(() => {
+      document.getElementById('loader').style.display = 'none';
+    }, 900);
+  },
+  (xhr) => {
+    // progress
+  },
+  (err) => {
+    console.error('GLB load error:', err);
+    document.getElementById('loader').querySelector('.loader-label').textContent = 'Error loading model';
+  }
+);
+
+/* ─── Animate drone along path ──────────────────── */
+const _up = new THREE.Vector3(0, 1, 0);
+const _fwdVec = new THREE.Vector3();
+const _quatA = new THREE.Quaternion();
+const _quatB = new THREE.Quaternion();
+const _m4 = new THREE.Matrix4();
+
+let prevT = 0;
+
+function moveDrone(t) {
+  if (!drone) return;
+
+  const tClamped = Math.max(0.001, Math.min(0.999, t));
+
+  // Position on curve
+  const pt = flightCurve.getPoint(tClamped);
+  drone.position.lerp(pt, 0.12);
+
+  // Tangent = forward direction
+  const tangent = flightCurve.getTangent(tClamped).normalize();
+
+  // Build look-at quaternion from tangent
+  dummyFwd.position.copy(drone.position);
+  dummyFwd.lookAt(drone.position.clone().add(tangent));
+
+  // Smooth rotation
+  drone.quaternion.slerp(dummyFwd.quaternion, 0.08);
+
+  // Banking: tilt on turns
+  const dt = tClamped - prevT;
+  const lateralChange = dt * 80;
+  const bankAngle = -lateralChange * 2.5 * Math.PI;
+  const bankQ = new THREE.Quaternion();
+  bankQ.setFromAxisAngle(tangent, bankAngle);
+  drone.quaternion.multiply(bankQ);
+
+  // Pitch tilt when ascending/descending
+  const pitchAngle = Math.atan2(tangent.y, Math.sqrt(tangent.x*tangent.x + tangent.z*tangent.z));
+  // already encoded in lookAt
+
+  prevT = tClamped;
+}
+
+function moveCamera(t) {
+  if (!drone) return;
+  const tClamped = Math.max(0.001, Math.min(0.999, t));
+
+  // Desired camera: behind and slightly above drone
+  const tangent = flightCurve.getTangent(tClamped).normalize();
+  const behind = tangent.clone().negate().multiplyScalar(7);
+  const above  = new THREE.Vector3(0, 2.5, 0);
+
+  // Slight lateral offset that oscillates
+  const side = new THREE.Vector3().crossVectors(tangent, _up).normalize();
+  const lateralOscillate = Math.sin(t * Math.PI * 3) * 1.8;
+  side.multiplyScalar(lateralOscillate);
+
+  const desired = drone.position.clone().add(behind).add(above).add(side);
+
+  // Damped camera
+  camPos.lerp(desired, 0.05);
+  camera.position.copy(camPos);
+
+  // Look slightly ahead of drone
+  const lookAheadT = Math.min(0.999, tClamped + 0.02);
+  const lookAheadPt = flightCurve.getPoint(lookAheadT);
+  const lookTarget = drone.position.clone().lerp(lookAheadPt, 0.5).add(new THREE.Vector3(0, 0.5, 0));
+  camTarget.lerp(lookTarget, 0.06);
+  camera.lookAt(camTarget);
+}
+
+/* ─── Particle drift ────────────────────────────── */
+function driftParticles(time) {
+  const pos = pGeo.attributes.position.array;
+  for (let i = 0; i < particleCount; i++) {
+    pos[i*3+1] += pSpd[i] * 0.4;
+    if (pos[i*3+1] > 25) pos[i*3+1] = -20;
+  }
+  pGeo.attributes.position.needsUpdate = true;
+  particles.rotation.y = time * 0.01;
+}
+
+/* ─── Dynamic fill light follows drone ─────────── */
+function updateFillLight() {
+  if (!drone) return;
+  fillLight.position.set(
+    drone.position.x + 3,
+    drone.position.y + 4,
+    drone.position.z + 5
+  );
+}
+
+/* ─── Clock & render loop ───────────────────────── */
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  const elapsed = clock.getElapsedTime();
+
+  if (mixer) mixer.update(delta);
+
+  moveDrone(scrollState.t);
+  moveCamera(scrollState.t);
+  driftParticles(elapsed);
+  updateFillLight();
+
+  // Subtle camera breathe
+  camera.position.y += Math.sin(elapsed * 0.7) * 0.003;
+  camera.position.x += Math.cos(elapsed * 0.5) * 0.003;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+/* ─── Resize ────────────────────────────────────── */
+window.addEventListener('resize', () => {
+  const w = window.innerWidth, h = window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+});
+
+/* ─── Scroll hint hide ──────────────────────────── */
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 80) {
+    document.getElementById('scroll-hint').classList.add('hidden');
+  }
+}, { passive: true });
+
+/* ─── Init camera position ──────────────────────── */
+const initPt = flightCurve.getPoint(0.001);
+camPos.set(initPt.x - 6, initPt.y + 2.5, initPt.z + 7);
+camera.position.copy(camPos);
+camTarget.copy(initPt);
+camera.lookAt(camTarget);
+</script>
+</body>
+</html>
