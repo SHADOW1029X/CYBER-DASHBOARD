@@ -383,7 +383,7 @@ function boot(){
   ══════════════════════════════════════════════ */
   var drone=null,mixer=null,clock=new THREE.Clock();
 
-  new THREE.GLTFLoader().load('k07_drone.glb',
+  new THREE.GLTFLoader().load('ClownFish.glb',
     function(gltf){
       gltf.scene.traverse(function(obj){
         if(obj.isLight){obj.intensity=0;obj.visible=false;return;}
@@ -437,7 +437,7 @@ function boot(){
     function(e){
       console.error(e);
       var el=document.getElementById('le');
-      el.textContent='Cannot load k07_drone.glb — same folder + localhost:8080';
+      el.textContent='Cannot load ClownFish.glb — same folder + localhost:8080';
       el.style.display='block';document.getElementById('lm').textContent='Error';
     }
   );
