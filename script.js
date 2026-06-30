@@ -1049,7 +1049,7 @@ window.addEventListener('unhandledrejection', e => {
       boot.classList.add('done');
     }
 
-    const gl = canvas.getContext('webgl', { antialias: true, alpha: false, powerPreference: 'high-performance' });
+    const gl = canvas.getContext('webgl', { antialias: true, alpha: true, premultipliedAlpha: false, powerPreference: 'high-performance' });
     if (!gl) { fallbackToPoster('no WebGL context'); return; }
 
     const uintExt = gl.getExtension('OES_element_index_uint');
@@ -1393,9 +1393,18 @@ window.addEventListener('unhandledrejection', e => {
     }
 
     async function loadEmbeddedGLB() {
-      const dataEl = document.getElementById('warriorGLBData');
-      if (!dataEl) throw new Error('embedded model data missing');
-      const base64Str = dataEl.textContent;
+      // The base64 fallback can come from either source:
+      //  - window.WARRIOR_GLB_BASE64, set by a separately-loaded
+      //    fallback-data.js file (keeps UI.html itself small enough for
+      //    normal git hosting limits)
+      //  - the inline <script type="text/plain"> tag (older, single-file
+      //    layout, kept for backward compatibility)
+      let base64Str = window.WARRIOR_GLB_BASE64;
+      if (!base64Str) {
+        const dataEl = document.getElementById('warriorGLBData');
+        if (!dataEl) throw new Error('embedded model data missing');
+        base64Str = dataEl.textContent;
+      }
       if (!base64Str || base64Str.length < 100) throw new Error('embedded model data empty');
       return await decodeBase64ToArrayBufferChunked(base64Str, frac => {
         setBootProgress(frac * 70, 'Decoding asset \u00b7 ' + Math.round(frac * 100) + '%');
@@ -1480,13 +1489,13 @@ window.addEventListener('unhandledrejection', e => {
 
         gl.enable(gl.DEPTH_TEST);
         gl.enable(gl.CULL_FACE);
-        gl.clearColor(0.012, 0.012, 0.039, 1);
+        gl.clearColor(0, 0, 0, 0);
 
         setBootProgress(100, 'Render online');
         renderReady = true;
         canvas.classList.add('ready');
         boot.classList.add('done');
-        if (sub) sub.textContent = 'Scroll to direct the sequence.';
+        if (sub) sub.textContent = 'Press and hold to spin.';
       } catch (err) {
         fallbackToPoster(err && err.message ? err.message : err);
       }
@@ -1501,30 +1510,43 @@ window.addEventListener('unhandledrejection', e => {
     }, { threshold: 0 });
     warriorIO.observe(section);
 
-    // ── scroll progress -> orbit angle (replaces video currentTime scrub) ──
-    let scrollProgress = 0;
-    function readScrollProgress() {
-      const rect = section.getBoundingClientRect();
-      const pinHeight = rect.height - window.innerHeight;
-      if (pinHeight <= 0) return null;
-      return clamp(-rect.top / pinHeight, 0, 1);
-    }
-    function onScrollOrResize() {
-      const p = readScrollProgress();
-      if (p !== null) scrollProgress = p;
-    }
-    window.addEventListener('scroll', onScrollOrResize, { passive: true });
-    window.addEventListener('resize', onScrollOrResize, { passive: true });
-    onScrollOrResize();
+    // ── press-and-hold drag -> manual spin (yaw only) ──
+    // Replaces the old scroll-scrub + mouse-parallax orbit entirely: the
+    // model now sits at a fixed angle until the user presses/touches and
+    // holds on the stage and drags horizontally, which spins it. Letting
+    // go simply stops the spin wherever it is — no scroll or hover input
+    // drives the camera anymore.
+    let targetYaw = 0, curYaw = 0;
+    let dragging = false, dragStartX = 0, dragStartYaw = 0, activePointerId = null;
 
-    // ── mouse parallax -> fine orbit/tilt offset (replaces stage translate) ──
-    let targetYaw = 0, targetPitch = 0, curYaw = 0, curPitch = 0;
-    if (!coarsePtr && !reduceMotion) {
-      window.addEventListener('mousemove', e => {
-        targetYaw   = ((e.clientX - innerWidth  / 2) / (innerWidth  / 2)) * 0.18;
-        targetPitch = ((e.clientY - innerHeight / 2) / (innerHeight / 2)) * 0.08;
-      }, { passive: true });
+    function yawFromEvent(e) {
+      const dx = e.clientX - dragStartX;
+      // ~360px of drag = one full turn; feels natural for both mouse and touch.
+      targetYaw = dragStartYaw + (dx / 360) * Math.PI * 2;
     }
+    function onPointerDown(e) {
+      dragging = true;
+      activePointerId = e.pointerId;
+      dragStartX = e.clientX;
+      dragStartYaw = targetYaw;
+      stage.classList.add('dragging');
+      if (canvas.setPointerCapture) { try { canvas.setPointerCapture(e.pointerId); } catch (_) {} }
+      e.preventDefault();
+    }
+    function onPointerMove(e) {
+      if (!dragging || e.pointerId !== activePointerId) return;
+      yawFromEvent(e);
+    }
+    function onPointerUp(e) {
+      if (e.pointerId !== activePointerId) return;
+      dragging = false;
+      activePointerId = null;
+      stage.classList.remove('dragging');
+    }
+    canvas.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerup', onPointerUp, { passive: true });
+    window.addEventListener('pointercancel', onPointerUp, { passive: true });
 
     function resizeCanvas() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -1537,7 +1559,6 @@ window.addEventListener('unhandledrejection', e => {
     }
 
     let rafId = null;
-    let idleSpin = 0;
 
     function ensureRunning() {
       if (rafId === null && !contextLost && renderReady) {
@@ -1549,22 +1570,19 @@ window.addEventListener('unhandledrejection', e => {
       if (contextLost) { rafId = null; return; }
       if (!sectionVisible) { rafId = null; return; }
 
-      curYaw   += (targetYaw   - curYaw)   * 0.06;
-      curPitch += (targetPitch - curPitch) * 0.06;
-      if (!reduceMotion) idleSpin += 0.0016;
+      curYaw += (targetYaw - curYaw) * 0.12;
 
       resizeCanvas();
 
-      const orbitAngle = scrollProgress * Math.PI * 1.15 + idleSpin + curYaw;
+      const orbitAngle = curYaw;
       const aspect = canvas.width / canvas.height || 1;
       const proj = perspective(Math.PI / 5, aspect, 0.1, 20);
 
       const dist = halfHeight * 3.4;
-      const liftAngle = curPitch;
       const eye = [
-        Math.sin(orbitAngle) * dist * Math.cos(liftAngle),
-        halfHeight * 0.15 + Math.sin(liftAngle) * dist * 0.4,
-        Math.cos(orbitAngle) * dist * Math.cos(liftAngle),
+        Math.sin(orbitAngle) * dist,
+        halfHeight * 0.15,
+        Math.cos(orbitAngle) * dist,
       ];
       const view = lookAt(eye, [0, halfHeight * 0.05, 0], [0, 1, 0]);
 
