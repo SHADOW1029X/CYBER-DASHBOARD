@@ -35,6 +35,12 @@ window.addEventListener('unhandledrejection', e => {
   window.addEventListener('scroll', scheduleScrollUpdate, { passive: true });
   window.addEventListener('resize', scheduleScrollUpdate, { passive: true });
 
+  // Exposed so independently-loaded modules (e.g. drone.js) can subscribe
+  // to the same single rAF-batched scroll bus instead of adding their own
+  // 'scroll' listener — keeps the "one listener, fanned out" guarantee
+  // intact even for add-on systems loaded after this IIFE runs.
+  window.__nytherionOnScroll = onScroll;
+
   // ── SCROLL PROGRESS ──
   const prog = document.getElementById('prog');
   onScroll(() => {
