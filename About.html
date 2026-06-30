@@ -234,10 +234,11 @@
 
 <div class="cyber-divider"></div>
 
-<!-- ── WARRIOR CINEMATIC 3D (scroll-orbited GLB render + mouse parallax) ── -->
+<!-- ── WARRIOR CINEMATIC 3D (press-and-hold drag-to-spin GLB render) ── -->
 <section class="pin pin-320" id="warriorSection">
   <div class="pinStick">
     <div class="warrior-stage" id="warriorStage">
+      <img id="warriorBg" class="warrior-bg" src="./WarriorLobby.jpg" alt="" aria-hidden="true" onerror="console.error('[warrior] background image failed to load:', this.src, '— check that the filename/case exactly matches the file on disk'); this.style.background='linear-gradient(135deg,#0a0a0d,#15151c)';" onload="console.log('[warrior] background image loaded OK:', this.naturalWidth+'x'+this.naturalHeight);">
       <canvas id="warriorCanvas" class="warrior-canvas" aria-hidden="true"></canvas>
       <img
         id="warriorPoster"
@@ -261,7 +262,7 @@
     <div class="warrior-content">
       <p class="sec-label warrior-eyebrow">Cinematic</p>
       <h2 class="sec-heading warrior-heading">The <span>Warrior</span></h2>
-      <p class="warrior-sub" id="warriorSub">Scroll to direct the sequence.</p>
+      <p class="warrior-sub" id="warriorSub">Press and hold to spin.</p>
     </div>
   </div>
 </section>
