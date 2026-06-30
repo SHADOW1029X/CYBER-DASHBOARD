@@ -13,19 +13,23 @@
       --mono: "SF Mono","JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
       --ease: cubic-bezier(0.22,1,0.36,1);
 
-      /* ── Liquid glass tokens ──
-         One shared recipe so every panel/card/pill reads as the same
-         material: a translucent frosted surface with a hairline top
-         highlight (simulated light catching the upper edge) and a
-         soft cool-toned ambient glow on hover. Excludes #hero and
-         #warriorSection, which keep their existing flat-dark surfaces. */
-      --glass-bg: linear-gradient(165deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015) 55%, rgba(63,140,255,0.025));
-      --glass-bg-hover: linear-gradient(165deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03) 55%, rgba(63,140,255,0.05));
-      --glass-border: rgba(255,255,255,0.14);
-      --glass-border-hover: rgba(120,170,255,0.38);
-      --glass-blur: blur(20px) saturate(150%);
-      --glass-shadow: 0 1px 0 0 rgba(255,255,255,0.08) inset, 0 -1px 0 0 rgba(0,0,0,0.25) inset, 0 18px 44px rgba(4,8,24,0.38);
-      --glass-shadow-hover: 0 1px 0 0 rgba(255,255,255,0.14) inset, 0 -1px 0 0 rgba(0,0,0,0.3) inset, 0 22px 56px rgba(4,8,24,0.46), 0 0 0 1px rgba(63,140,255,0.06), 0 0 32px rgba(63,140,255,0.10);
+      /* ── Liquid glass tokens (true lens, not frosted blur) ──
+         The panel body stays almost fully transparent — whatever sits
+         behind it (including the drone companion) is genuinely visible
+         through it, just bent, the way light refracts through curved
+         glass. backdrop-filter:url(#liquidGlassLens) does the actual
+         optical distortion (see SVG defs in UI.html); the gradient/
+         border/shadow below only add the thin highlight a real glass
+         edge catches, not an opaque tint. Excludes #hero and
+         #warriorSection, which keep their own existing surfaces. */
+      --glass-tint: linear-gradient(165deg, rgba(255,255,255,0.05), rgba(255,255,255,0.0) 50%, rgba(120,170,255,0.025));
+      --glass-tint-hover: linear-gradient(165deg, rgba(255,255,255,0.08), rgba(255,255,255,0.01) 50%, rgba(120,170,255,0.05));
+      --glass-border: rgba(255,255,255,0.20);
+      --glass-border-hover: rgba(140,185,255,0.48);
+      --glass-lens: url(#liquidGlassLens);
+      --glass-lens-subtle: url(#liquidGlassLensSubtle);
+      --glass-shadow: 0 1px 0 0 rgba(255,255,255,0.16) inset, 0 -1px 0 0 rgba(0,0,0,0.22) inset, 0 14px 38px rgba(2,4,14,0.32);
+      --glass-shadow-hover: 0 1px 0 0 rgba(255,255,255,0.24) inset, 0 -1px 0 0 rgba(0,0,0,0.26) inset, 0 18px 46px rgba(2,4,14,0.4), 0 0 0 1px rgba(120,170,255,0.08), 0 0 28px rgba(80,150,255,0.14);
     }
     *{margin:0;padding:0;box-sizing:border-box;}
     html,body{width:100%;}
@@ -48,26 +52,39 @@
     ::-webkit-scrollbar-thumb{background:rgba(63,140,255,0.3);border-radius:2px;}
 
     /* ── Liquid glass surface ──
-       Shared frosted-panel treatment applied to floating cards, pills,
-       and stat panels across the page (#hero and #warriorSection are
-       intentionally excluded — see their own rules further down).
-       Falls back to the existing flat translucent fill automatically
-       on browsers without backdrop-filter support (graceful, no JS). */
+       Shared LIQUID GLASS surface — true lens refraction, not frosted blur.
+       backdrop-filter:url(#liquidGlassLens) bends the pixels behind the panel
+       the way light bends through curved glass: the drone, background textures,
+       and page content behind it remain VISIBLE and DISTORTED, not hidden.
+       The near-transparent gradient tint only adds the hairline highlight a
+       real glass edge catches — it adds no meaningful colour of its own.
+       Excludes #hero and #warriorSection (their existing surfaces unchanged).
+
+       Fallback chain:
+         1. SVG lens (Chrome/Edge/Firefox 103+ with backdrop-filter:url())
+         2. Subtle blur (Safari + older Chromium: backdrop-filter:blur works
+            but not url() — caught by @supports below)
+         3. Dark tint (no backdrop-filter at all — IE/old browsers) */
     .glass{
-      background:var(--glass-bg);
-      -webkit-backdrop-filter:var(--glass-blur);
-      backdrop-filter:var(--glass-blur);
+      background:var(--glass-tint);
+      -webkit-backdrop-filter:var(--glass-lens);
+      backdrop-filter:var(--glass-lens);
       border:1px solid var(--glass-border);
       box-shadow:var(--glass-shadow);
       transition:background .35s var(--ease),border-color .35s var(--ease),box-shadow .4s var(--ease),transform .35s var(--ease);
     }
     .glass.glass-hover:hover{
-      background:var(--glass-bg-hover);
+      background:var(--glass-tint-hover);
       border-color:var(--glass-border-hover);
       box-shadow:var(--glass-shadow-hover);
     }
-    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
-      .glass{background:rgba(14,17,28,0.78);}
+    /* Safari/old Chromium: blur works, SVG filter doesn't */
+    @supports (backdrop-filter: blur(1px)) and (not (backdrop-filter: url(#x))){
+      .glass{-webkit-backdrop-filter:blur(12px) saturate(130%);backdrop-filter:blur(12px) saturate(130%);}
+    }
+    /* No backdrop-filter at all */
+    @supports not (backdrop-filter: url(#x)){
+      .glass{background:rgba(10,13,24,0.82);}
     }
 
     /* film grain */
@@ -226,7 +243,7 @@
     .cyber-divider{width:100%;height:1px;background:var(--line);}
 
     /* ── HOW IT WORKS ── */
-    #how-it-works{background:rgba(8,10,18,0.6);}
+    #how-it-works{background:rgba(8,10,18,0.15);}
 
     /* capability grid */
     .capability-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0;border-top:1px solid var(--line);}
@@ -249,12 +266,12 @@
     /* data flow — scrollable on mobile with fade edges */
     .dataflow{
       margin:3rem 0;border-radius:18px;padding:clamp(1.5rem,3vw,2.5rem);position:relative;
-      background:var(--glass-bg);
-      -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+      background:var(--glass-tint);
+      -webkit-backdrop-filter:var(--glass-lens);backdrop-filter:var(--glass-lens);
       border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
       transition:background .35s var(--ease),border-color .35s var(--ease),box-shadow .4s var(--ease);
     }
-    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+    @supports not (backdrop-filter: url(#x)){
       .dataflow{background:rgba(14,17,28,0.78);}
     }
     .dataflow-inner{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
@@ -265,7 +282,7 @@
       font-family:var(--mono);font-size:.75rem;padding:10px 16px;border-radius:100px;white-space:nowrap;
       color:var(--ink);cursor:default;
       background:linear-gradient(165deg, rgba(255,255,255,0.09), rgba(63,140,255,0.05));
-      -webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);
+      -webkit-backdrop-filter:var(--glass-lens-subtle);backdrop-filter:var(--glass-lens-subtle);
       border:1px solid rgba(120,170,255,0.22);
       transition:background .25s,border-color .25s,box-shadow .25s;
     }
@@ -277,18 +294,18 @@
     .usecase-item{
       display:grid;grid-template-columns:auto 1fr;gap:1rem;padding:clamp(1.25rem,2.5vw,1.75rem);
       border-radius:14px;border-left:3px solid var(--blue);
-      background:var(--glass-bg);
-      -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+      background:var(--glass-tint);
+      -webkit-backdrop-filter:var(--glass-lens);backdrop-filter:var(--glass-lens);
       border-top:1px solid var(--glass-border);border-right:1px solid var(--glass-border);border-bottom:1px solid var(--glass-border);
       transition:border-left-color .25s,background .25s,transform .3s var(--ease),box-shadow .3s,border-color .25s;
     }
     .usecase-item:hover{
-      background:var(--glass-bg-hover);border-left-color:var(--magenta);
+      background:var(--glass-tint-hover);border-left-color:var(--magenta);
       border-top-color:var(--glass-border-hover);border-right-color:var(--glass-border-hover);border-bottom-color:var(--glass-border-hover);
       transform:translateX(5px);
       box-shadow:-4px 0 24px rgba(34,198,230,.10),0 8px 32px rgba(63,140,255,.08);
     }
-    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+    @supports not (backdrop-filter: url(#x)){
       .usecase-item{background:rgba(14,17,28,0.78);}
     }
     .usecase-num{font-weight:600;font-size:1.1rem;letter-spacing:-0.02em;color:var(--blue);opacity:.4;min-width:2rem;}
@@ -296,13 +313,13 @@
     .usecase-body{font-size:clamp(14px,1.3vw,16px);color:var(--muted);line-height:1.65;}
 
     /* ── PAGES SECTION ── */
-    #pages{background:var(--bg);}
+    #pages{background:transparent;}
     .pages-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:3rem;}
     .page-tab{font-family:var(--mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;padding:9px 20px;
     border-radius:100px;cursor:pointer;color:var(--muted);transition:color .2s,border-color .2s,background .2s,box-shadow .2s;
     position:relative;overflow:hidden;isolation:isolate;
     background:linear-gradient(165deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
-    -webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);
+    -webkit-backdrop-filter:var(--glass-lens-subtle);backdrop-filter:var(--glass-lens-subtle);
     border:1px solid var(--glass-border);}
     .page-tab:hover{color:var(--ink);border-color:rgba(255,255,255,.3);background:linear-gradient(165deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));}
     .page-tab.active{color:var(--ink);border-color:var(--blue);background:linear-gradient(165deg, rgba(63,140,255,.16), rgba(63,140,255,.04));box-shadow:0 0 24px rgba(63,140,255,.14);}
@@ -335,11 +352,11 @@
       display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
       padding:clamp(1.5rem,3vw,2rem) clamp(1.5rem,3vw,2.25rem);
       border-radius:18px;margin-bottom:2rem;position:relative;overflow:hidden;
-      background:var(--glass-bg);
-      -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+      background:var(--glass-tint);
+      -webkit-backdrop-filter:var(--glass-lens);backdrop-filter:var(--glass-lens);
       border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
     }
-    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+    @supports not (backdrop-filter: url(#x)){
       .page-hero-bar{background:rgba(14,17,28,0.78);}
     }
     .page-hero-bar::after{
@@ -358,12 +375,12 @@
     .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:2.5rem;}
     .feat-card{
       border-radius:14px;padding:1.5rem;position:relative;overflow:hidden;
-      background:var(--glass-bg);
-      -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+      background:var(--glass-tint);
+      -webkit-backdrop-filter:var(--glass-lens);backdrop-filter:var(--glass-lens);
       border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
       transition:background .25s,border-color .3s,transform .3s var(--ease),box-shadow .3s;
     }
-    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+    @supports not (backdrop-filter: url(#x)){
       .feat-card{background:rgba(14,17,28,0.78);}
     }
     .feat-card::before{
@@ -371,14 +388,14 @@
       background:var(--grad);opacity:0;transition:opacity .3s;
     }
     .feat-card:hover{
-      background:var(--glass-bg-hover);border-color:var(--glass-border-hover);
+      background:var(--glass-tint-hover);border-color:var(--glass-border-hover);
       transform:translateY(-4px);
       box-shadow:0 16px 48px rgba(63,140,255,.13),0 2px 8px rgba(0,0,0,.3),0 1px 0 0 rgba(255,255,255,.14) inset;
     }
     .feat-card:hover::before{opacity:1;}
     .feat-icon{width:40px;height:40px;border-radius:10px;
     background:linear-gradient(165deg, rgba(255,255,255,0.10), rgba(63,140,255,0.06));
-    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:var(--glass-lens-subtle);backdrop-filter:var(--glass-lens-subtle);
     border:1px solid rgba(120,170,255,0.22);
     display:flex;align-items:center;justify-content:center;margin-bottom:1rem;transition:background .25s,border-color .25s,box-shadow .25s;}
     .feat-card:hover .feat-icon{background:linear-gradient(165deg, rgba(255,255,255,0.16), rgba(63,140,255,0.10));border-color:rgba(120,170,255,.5);box-shadow:0 0 16px rgba(63,140,255,.18);}
@@ -392,7 +409,7 @@
       font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
       padding:5px 14px;border-radius:100px;color:rgba(160,195,255,.95);cursor:default;
       background:linear-gradient(165deg, rgba(255,255,255,0.06), rgba(79,123,255,0.04));
-      -webkit-backdrop-filter:blur(12px) saturate(150%);backdrop-filter:blur(12px) saturate(150%);
+      -webkit-backdrop-filter:var(--glass-lens-subtle);backdrop-filter:var(--glass-lens-subtle);
       border:1px solid rgba(120,170,255,0.20);
       transition:background .2s,border-color .2s,color .2s;
     }
@@ -407,7 +424,7 @@
     .wf-step:hover{background:rgba(63,140,255,.02);padding-left:.5rem;}
     .wf-num{font-family:var(--mono);font-size:10px;width:28px;height:28px;border-radius:50%;flex-shrink:0;
     background:linear-gradient(165deg, rgba(255,255,255,0.10), rgba(63,140,255,0.06));
-    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:var(--glass-lens-subtle);backdrop-filter:var(--glass-lens-subtle);
     border:1px solid rgba(120,170,255,0.24);
     display:flex;align-items:center;justify-content:center;color:var(--blue);margin-top:2px;}
     .wf-text{font-size:clamp(14px,1.3vw,16px);color:var(--muted);line-height:1.65;}
@@ -419,12 +436,12 @@
     .stat-box{
       padding:clamp(1.25rem,3vw,2rem);text-align:center;
       position:relative;overflow:hidden;
-      background:var(--glass-bg);
-      -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+      background:var(--glass-tint);
+      -webkit-backdrop-filter:var(--glass-lens);backdrop-filter:var(--glass-lens);
       transition:background .3s var(--ease);
     }
-    .stat-box:hover{background:var(--glass-bg-hover);}
-    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+    .stat-box:hover{background:var(--glass-tint-hover);}
+    @supports not (backdrop-filter: url(#x)){
       .stat-box{background:rgba(14,17,28,0.78);}
     }
     .stat-box::before{
@@ -819,11 +836,11 @@
     }
     #directPanel{
       margin-top:28px;max-width:360px;border-radius:14px;padding:20px 22px;
-      background:var(--glass-bg);
-      -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+      background:var(--glass-tint);
+      -webkit-backdrop-filter:var(--glass-lens);backdrop-filter:var(--glass-lens);
       border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
     }
-    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+    @supports not (backdrop-filter: url(#x)){
       #directPanel{background:rgba(14,17,28,0.8);}
     }
     .dpr{margin-bottom:14px;}
@@ -907,7 +924,7 @@
        ══════════════════════════════════════════════ */
     #ideaSection{
       padding:clamp(100px,18vh,180px) 0;
-      background:var(--bg);
+      background:transparent;
       position:relative;
     }
     #ideaSection .section-inner{padding-top:0;padding-bottom:0;}
@@ -969,7 +986,7 @@
       position:relative;
       width:100%;
       padding:clamp(90px,16vh,160px) 0;
-      background:var(--bg);
+      background:transparent;
       display:flex;
       flex-direction:column;
       align-items:center;
@@ -1007,18 +1024,18 @@
       border-radius:16px;
       perspective:1000px;
       will-change:transform;
-      background:var(--glass-bg);
-      -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+      background:var(--glass-tint);
+      -webkit-backdrop-filter:var(--glass-lens);backdrop-filter:var(--glass-lens);
       border:1px solid var(--glass-border);
       box-shadow:var(--glass-shadow);
       transition:border-color .3s ease,background .3s ease,box-shadow .3s ease;
     }
     .grid-item:hover{
       border-color:var(--glass-border-hover);
-      background:var(--glass-bg-hover);
+      background:var(--glass-tint-hover);
       box-shadow:var(--glass-shadow-hover);
     }
-    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+    @supports not (backdrop-filter: url(#x)){
       .grid-item{background:rgba(14,17,28,0.7);}
     }
     .item-inner{
