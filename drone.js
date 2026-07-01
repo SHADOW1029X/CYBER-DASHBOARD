@@ -177,6 +177,58 @@
          resize/orientation change since section heights can reflow. */
       var KX = [], KY = [], KS = [], docHeight = 1;
 
+      /* ── Per-session randomisation ───────────────────────────────
+         Two independent sources of randomness, generated ONCE per
+         page load (cheap, no per-frame cost):
+           1. CORNER_JITTER — nudges each waypoint a little so the
+              route isn't identical corner-to-corner every visit.
+           2. BACKTRACK_PULSES — a small handful of scroll positions
+              where the drone will briefly reverse along its own path
+              before continuing forward, like a real drone correcting
+              or glancing back. Few in number, smooth in/out, so it
+              reads as natural hesitation rather than jitter. */
+      function rand(min, max) { return min + Math.random() * (max - min); }
+      function clampRange(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+      var CORNER_JITTER = CORNER_PATTERN.map(function () {
+        return { dx: rand(-0.07, 0.07), dy: rand(-0.06, 0.06), ds: rand(-0.08, 0.10) };
+      });
+
+      var BACKTRACK_PULSES = (function () {
+        var count = 3 + Math.floor(Math.random() * 2); // 3–4 backward dips total
+        var pulses = [];
+        var minGap = 0.16;
+        var attempts = 0;
+        while (pulses.length < count && attempts < 60) {
+          attempts++;
+          var c = rand(0.14, 0.90);
+          var ok = pulses.every(function (p) { return Math.abs(p.center - c) > minGap; });
+          if (!ok) continue;
+          pulses.push({
+            center: c,
+            halfWidth: rand(0.016, 0.028),
+            amount: rand(0.045, 0.075) // how far back along the path it dips
+          });
+        }
+        return pulses;
+      })();
+
+      // Smooth 0..1 dip shaped like a bump — 0 at both edges of the
+      // window, peaking at the center. Used to pull the sample time
+      // backward for a moment without any velocity discontinuity.
+      function backtrackWarp(t) {
+        var total = 0;
+        for (var i = 0; i < BACKTRACK_PULSES.length; i++) {
+          var p = BACKTRACK_PULSES[i];
+          var d = (t - p.center) / p.halfWidth;
+          if (d > -1 && d < 1) {
+            var u = (d + 1) * 0.5; // 0..1 across the window
+            total += p.amount * Math.sin(u * Math.PI);
+          }
+        }
+        return total;
+      }
+
       function buildPath() {
         docHeight = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
         var focusEl = document.getElementById('focus');
@@ -202,13 +254,17 @@
           prevAt = at;
 
           var c = CORNER_PATTERN[i % CORNER_PATTERN.length];
+          var j = CORNER_JITTER[i % CORNER_JITTER.length];
           // gentle scale pulse — bigger when entering a section, easing
           // down slightly mid-section, matching the PeachWeb depth illusion
           var pulse = 0.92 + (i % 3 === 0 ? 0.18 : i % 3 === 1 ? -0.06 : 0.08);
 
-          KX.push({ at: at, v: c.x });
-          KY.push({ at: at, v: c.y });
-          KS.push({ at: at, v: pulse });
+          // Jittered, per-session waypoint — keeps the route inside the
+          // same safe on-screen bounds as the base corner pattern while
+          // making the actual path different on every page load.
+          KX.push({ at: at, v: clampRange(c.x + j.dx, -0.86, 0.86) });
+          KY.push({ at: at, v: clampRange(c.y + j.dy, -0.86, 0.86) });
+          KS.push({ at: at, v: clampRange(pulse + j.ds, 0.62, 1.15) });
         }
 
         // Tail: settle near the footer, slightly lower + centered.
@@ -260,6 +316,14 @@
       var SMOOTH_POS = 0.05;
       var SMOOTH_ROT = 0.085;
       var SMOOTH_SC = 0.06;
+
+      // Randomised wander phases — generated once per load so the
+      // organic weave (independent of scroll) never repeats the same
+      // pattern twice, at effectively zero per-frame cost (a few sines).
+      var WPH = {
+        x1: rand(0, Math.PI * 2), x2: rand(0, Math.PI * 2),
+        y1: rand(0, Math.PI * 2), y2: rand(0, Math.PI * 2)
+      };
 
       var scrollT = 0;
       var visible = false;
@@ -378,13 +442,29 @@
         var t = scrollT;
         var hh = halfH(), hw = halfW();
 
-        var tx = hw * sample(KX, t);
-        var ty = hh * sample(KY, t);
+        // Sample time is warped by the scheduled backtrack pulses: for a
+        // brief window the effective position along the path moves
+        // *earlier* even though the user keeps scrolling forward, so the
+        // drone genuinely reverses along its own route for a moment —
+        // a handful of times across the whole page, never more.
+        var tEff = clamp01(t - backtrackWarp(t));
+
+        var tx = hw * sample(KX, tEff);
+        var ty = hh * sample(KY, tEff);
         var tsc = BASE_SCALE * sample(KS, t);
+
+        // Continuous organic wander — low-amplitude, non-repeating drift
+        // layered on top of the section-to-section path so the route
+        // never reads as a rigid straight line between waypoints. Cheap:
+        // a handful of sines, no extra geometry or draw calls.
+        var wx = (Math.sin(el * 0.53 + WPH.x1) * 0.045 + Math.sin(el * 0.21 + WPH.x2) * 0.024) * hw;
+        var wy = (Math.cos(el * 0.47 + WPH.y1) * 0.035 + Math.sin(el * 0.19 + WPH.y2) * 0.020) * hh;
+        tx += wx; ty += wy;
 
         // Track previous SMOOTHED position (not raw target) so velocity
         // reflects actual on-screen motion — this is what drives correct,
-        // non-jittery banking even when scroll is choppy (trackpad/wheel).
+        // non-jittery banking even when scroll is choppy (trackpad/wheel),
+        // and correctly flips during a backtrack dip.
         var beforeX = L.x, beforeY = L.y;
 
         L.x += (tx - L.x) * SMOOTH_POS;
@@ -395,25 +475,31 @@
         var vy = L.y - beforeY;
         var speed = Math.sqrt(vx * vx + vy * vy);
 
-        // ── Derive heading (yaw) from velocity direction ──
-        // atan2 of horizontal velocity gives a natural "nose points where
-        // it's going" heading; clamps prevent over-rotation on tiny jitters.
+        // ── Derive heading (yaw) from the FULL velocity vector ──
+        // Using both vx and vy (not just vx) means the nose tracks the
+        // true direction of travel — including the reversed direction
+        // during a backtrack dip, where vx/vy naturally flip sign and
+        // the drone visibly turns to face back the way it came, exactly
+        // like a real quad correcting course, before turning forward
+        // again once the dip ends.
         if (speed > 0.0006) {
-          var targetYaw = Math.atan2(vx, 0.6) * 0.9; // 0.6 = forward-bias divisor
-          targetYaw = Math.max(-1.05, Math.min(1.05, targetYaw));
+          var targetYaw = Math.atan2(vx, 0.55 + Math.abs(vy) * 0.4) * 0.95;
+          targetYaw = Math.max(-1.35, Math.min(1.35, targetYaw));
           L.yaw += (targetYaw - L.yaw) * SMOOTH_ROT;
         } else {
           L.yaw += (0 - L.yaw) * (SMOOTH_ROT * 0.4); // settle level when idle
         }
 
         // ── Derive pitch from vertical velocity (nose up when climbing,
-        //    nose down when descending) ──
+        //    nose down when descending — also nose-up when braking into
+        //    a backtrack, matching how a real drone decelerates) ──
         var targetPitch = Math.max(-0.5, Math.min(0.5, -vy * 9.0));
         L.pitch += (targetPitch - L.pitch) * SMOOTH_ROT;
 
         // ── Derive roll/bank from horizontal velocity — banks INTO the
-        //    turn like a real quad/fixed-wing platform ──
-        var targetRoll = Math.max(-0.62, Math.min(0.62, -vx * 13.0));
+        //    turn like a real quad/fixed-wing platform, including the
+        //    hard bank-and-turn look when it reverses direction ──
+        var targetRoll = Math.max(-0.68, Math.min(0.68, -vx * 13.5));
         L.roll += (targetRoll - L.roll) * SMOOTH_ROT;
 
         // ── Idle hover micro-jitter — always alive, even mid-scroll-pause ──
