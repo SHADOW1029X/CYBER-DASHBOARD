@@ -1309,6 +1309,18 @@ window.addEventListener('unhandledrejection', e => {
       const c=Math.cos(rad), s=Math.sin(rad);
       return new Float32Array([c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]);
     }
+    // Rotation about X — used once, as a fixed axis-correction for the
+    // dome/ship mesh (see the comment where it's applied): the source
+    // asset's own glTF node hierarchy carries a Z-up→Y-up correction
+    // (a matrix on the "Sketchfab_model" node) that our GLB parser never
+    // reads, since it only pulls raw local vertex data straight off the
+    // mesh primitive. Baking the same correction in here as a fixed
+    // rotation on the model matrix reproduces exactly what that ignored
+    // node transform would have done.
+    function rotateX(rad) {
+      const c=Math.cos(rad), s=Math.sin(rad);
+      return new Float32Array([1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]);
+    }
     // Rotates a direction vector around the Y axis — used to keep the
     // light rig oriented relative to the orbiting camera (see frame()),
     // since the model itself never rotates, only the camera orbits it.
@@ -1324,6 +1336,9 @@ window.addEventListener('unhandledrejection', e => {
     // composition-order ambiguity for this simple, very common case.
     function scaleThenTranslate(s, v) {
       return new Float32Array([s,0,0,0, 0,s,0,0, 0,0,s,0, v[0],v[1],v[2],1]);
+    }
+    function scaleUniform(s) {
+      return new Float32Array([s,0,0,0, 0,s,0,0, 0,0,s,0, 0,0,0,1]);
     }
     function multiply(a,b) {
       const out = new Float32Array(16);
@@ -1489,15 +1504,16 @@ window.addEventListener('unhandledrejection', e => {
     // SHIP_RADIUS_FACTOR: dome radius, in soldier-half-heights. Must
     // comfortably exceed the camera-to-dome-center distance below with a
     // wide safety margin, or the camera can clip through the inner wall.
+    // Pulled in tighter than before to match the close, intimate cockpit
+    // scale of the reference screenshot (walls close around the camera,
+    // not a large distant dome).
     //
     // DOME_Y_OFFSET_FACTOR: how far to raise the dome's center ABOVE the
-    // camera's fixed orbit height (in half-heights). The dome's floor
-    // sits at (domeCenterY - radius); raising the dome brings that floor
-    // closer to the soldier's feet, so this is the actual "ground the
-    // character in the scene" knob. (An earlier version of this tried
-    // shifting the soldier + dome down together instead — that cancels
-    // out geometrically and does nothing, so it was dropped in favor of
-    // this, which is the one that actually has a visible effect.)
+    // camera's fixed orbit height (in half-heights). Kept small/near-zero
+    // now — the reference screenshot shows an essentially centered,
+    // symmetric interior (camera near the dome's true center), so this
+    // is a light touch rather than the aggressive floor-grounding
+    // attempt from before.
     //
     // Both of these are exactly the values worth nudging after seeing
     // the live render, since the geometry can't be visually previewed
@@ -1510,8 +1526,22 @@ window.addEventListener('unhandledrejection', e => {
     let texShipBase, progShip;
     let locPosShip, locNormShip, locUVShip;
     let uModelShip, uViewShip, uProjShip, uNormalMatShip, uBaseShip;
-    const SHIP_RADIUS_FACTOR = 7.0;
-    const DOME_Y_OFFSET_FACTOR = 3.0;
+    const SHIP_RADIUS_FACTOR = 4.0;
+    const DOME_Y_OFFSET_FACTOR = 0.5;
+    // Fixed 90° rotation about X — reproduces the Z-up→Y-up correction
+    // baked into the source file's "Sketchfab_model" node matrix, which
+    // our GLB parser never reads (see rotateX()'s comment for the full
+    // derivation). Computed once since it never changes.
+    const SHIP_AXIS_CORRECTION = rotateX(Math.PI / 2);
+
+    // ── camera framing ──
+    // Pulled in close and aimed at chest/upper-torso height for a tight
+    // hero-shot crop — the legs run out below the bottom of the frame by
+    // design, keeping the character large and centered rather than a
+    // small full-body figure floating in the middle of the dome.
+    const CAMERA_DIST_FACTOR = 2.0;    // was 3.4 — closer camera, bigger figure
+    const CAMERA_EYE_Y_FACTOR = 0.5;   // was 0.15 — aimed up near chest/shoulder height
+    const CAMERA_LOOKAT_Y_FACTOR = 0.4; // was 0.05
 
     (async function init() {
       try {
@@ -1728,9 +1758,9 @@ window.addEventListener('unhandledrejection', e => {
       const orbitAngle = curYaw;
       const aspect = canvas.width / canvas.height || 1;
 
-      const dist = halfHeight * 3.4;
-      const eyeY = halfHeight * 0.15;
-      const lookAtY = halfHeight * 0.05;
+      const dist = halfHeight * CAMERA_DIST_FACTOR;
+      const eyeY = halfHeight * CAMERA_EYE_Y_FACTOR;
+      const lookAtY = halfHeight * CAMERA_LOOKAT_Y_FACTOR;
 
       // Dome center sits ABOVE the camera's fixed orbit height by
       // DOME_Y_OFFSET_FACTOR half-heights — this is what actually brings
@@ -1789,7 +1819,11 @@ window.addEventListener('unhandledrejection', e => {
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBufShip);
 
-        const modelMatShip = scaleThenTranslate(shipRadius, [0, domeCenterY, 0]);
+        // Scale the unit sphere, apply the axis correction the source
+        // file's own (ignored) node hierarchy would have applied, then
+        // move it to its world position — in that order: v' = T*(R*(S*v)).
+        const shipScaleRot = multiply(SHIP_AXIS_CORRECTION, scaleUniform(shipRadius));
+        const modelMatShip = multiply(translate([0, domeCenterY, 0]), shipScaleRot);
         const normalMatShip = new Float32Array([
           modelMatShip[0], modelMatShip[1], modelMatShip[2],
           modelMatShip[4], modelMatShip[5], modelMatShip[6],
