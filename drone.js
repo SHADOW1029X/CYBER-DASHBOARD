@@ -406,13 +406,15 @@
                 if (!m) return;
                 // Push metalness up and roughness down so the drone
                 // catches directional highlights like polished metal
-                if (m.metalness !== undefined) m.metalness = Math.max(m.metalness, 0.82);
-                if (m.roughness !== undefined) m.roughness = Math.min(m.roughness, 0.28);
-                m.envMapIntensity = 2.8;
+                if (m.metalness !== undefined) m.metalness = Math.max(m.metalness, 0.60);
+                if (m.roughness !== undefined) m.roughness = Math.min(m.roughness, 0.6);
+                m.envMapIntensity = 2.0;
                 m.needsUpdate = true;
               });
             }
           });
+          // Slightly boost exposure once after materials are set — not per-mesh
+          renderer.toneMappingExposure = 1.12;
 
           // Measure the EFFECTIVE bounding box after Three.js has already
           // applied the GLB's baked node matrices (90° axis conversion +
