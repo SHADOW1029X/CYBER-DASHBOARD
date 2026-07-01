@@ -99,19 +99,29 @@
          Cool blue/cyan key + magenta rim, matching NYTHERION's
          --blue / --magenta accent palette so the drone feels native
          to the site rather than a foreign drop-in. */
-      scene.add(new THREE.AmbientLight(0x3a4a78, 2.6));
+      scene.add(new THREE.AmbientLight(0x3a4a78, 2.0));
 
-      var key = new THREE.DirectionalLight(0xbcd4ff, 4.2);
+      // Key: cooler, stronger — simulates a bright environment reflection
+      var key = new THREE.DirectionalLight(0xddeeff, 6.5);
       key.position.set(3, 6, 6); scene.add(key);
 
-      var rim = new THREE.DirectionalLight(0x22c6e6, 3.0);
-      rim.position.set(-5, 2, -4); scene.add(rim);
+      // Sharp specular highlight — positioned to catch top-front surfaces
+      var spec = new THREE.DirectionalLight(0xffffff, 5.0);
+      spec.position.set(1, 10, 5); scene.add(spec);
 
-      var fill = new THREE.DirectionalLight(0x3f8cff, 2.0);
+      // Rim: warm white back-light — creates the metallic edge catch
+      var rim = new THREE.DirectionalLight(0xffffff, 4.5);
+      rim.position.set(-6, 4, -3); scene.add(rim);
+
+      // Secondary rim: cyan accent to match site palette
+      var rim2 = new THREE.DirectionalLight(0x22c6e6, 2.8);
+      rim2.position.set(5, -2, -4); scene.add(rim2);
+
+      var fill = new THREE.DirectionalLight(0x3f8cff, 2.2);
       fill.position.set(4, -2, 4); scene.add(fill);
 
-      var glowA = new THREE.PointLight(0x3f8cff, 4.5, 4.5);
-      var glowB = new THREE.PointLight(0x22c6e6, 3.5, 3.5);
+      var glowA = new THREE.PointLight(0x3f8cff, 5.5, 5.5);
+      var glowB = new THREE.PointLight(0x22c6e6, 4.0, 4.0);
       scene.add(glowA, glowB);
 
       /* ── Subtle ambient particles (depth cue, very low opacity) ─ */
@@ -299,6 +309,18 @@
           // still defensively strip any stray lights for robustness.
           drone.traverse(function (obj) {
             if (obj.isLight) { obj.intensity = 0; obj.visible = false; }
+            if (obj.isMesh && obj.material) {
+              var mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+              mats.forEach(function (m) {
+                if (!m) return;
+                // Push metalness up and roughness down so the drone
+                // catches directional highlights like polished metal
+                if (m.metalness !== undefined) m.metalness = Math.max(m.metalness, 0.82);
+                if (m.roughness !== undefined) m.roughness = Math.min(m.roughness, 0.28);
+                m.envMapIntensity = 2.8;
+                m.needsUpdate = true;
+              });
+            }
           });
 
           // Measure the EFFECTIVE bounding box after Three.js has already
@@ -313,7 +335,7 @@
           // Target: drone's longest dimension ≈ 32% of viewport height —
           // prominent like the clown fish, but small enough to weave
           // between corners without overwhelming the section content.
-          var targetWorldSize = halfH() * 2 * 0.32;
+          var targetWorldSize = halfH() * 2 * 0.46;
           BASE_SCALE = targetWorldSize / maxDim;
 
           drone.scale.setScalar(BASE_SCALE);
@@ -411,8 +433,8 @@
         // Engine glow follows + pulses with speed
         glowA.position.set(L.x, L.y - 0.05, 0.3);
         glowB.position.set(L.x + 0.04, L.y + 0.03, 0.2);
-        glowA.intensity = 3.5 + Math.sin(el * 3.4) * 1.3 + speed * 40;
-        glowB.intensity = 2.8 + Math.cos(el * 2.7) * 1.1 + speed * 30;
+        glowA.intensity = 5.0 + Math.sin(el * 3.4) * 2.0 + speed * 50;
+        glowB.intensity = 4.0 + Math.cos(el * 2.7) * 1.6 + speed * 35;
 
         renderer.render(scene, camera);
       }
