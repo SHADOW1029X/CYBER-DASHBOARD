@@ -1557,6 +1557,16 @@ window.addEventListener('unhandledrejection', e => {
     const CAMERA_EYE_Y_FACTOR = 0.5;   // was 0.15 — aimed up near chest/shoulder height
     const CAMERA_LOOKAT_Y_FACTOR = 0.4; // was 0.05
 
+    // Turns the soldier's own body to face the gate/opening in the dome
+    // rather than standing in profile. This is a genuine guess at both
+    // direction and amount — I have no way to see which way is "right"
+    // from here, so if he ends up facing the wrong way, the fix is a
+    // one-line sign/value flip on this single constant:
+    //   - wrong direction entirely → negate it (SOLDIER_YAW * -1)
+    //   - right way, wrong amount → adjust the multiplier on Math.PI
+    //   - facing directly away → add Math.PI (flip 180°) to this value
+    const SOLDIER_YAW = Math.PI / 2; // 90°, turning him to his right
+
     (async function init() {
       try {
         setBootProgress(2, 'Initializing render target');
@@ -1801,7 +1811,10 @@ window.addEventListener('unhandledrejection', e => {
       ];
       const view = lookAt(eye, [0, lookAtY, 0], [0, 1, 0]);
 
-      const modelMat = translate([0, -centerY, 0]);
+      // Body-facing rotation about his own vertical axis — independent
+      // of the camera orbit, which never changes which way he faces on
+      // its own. This is the actual "turn him to face the gate" knob.
+      const modelMat = multiply(translate([0, -centerY, 0]), rotateY(SOLDIER_YAW));
       const normalMat = new Float32Array([
         modelMat[0], modelMat[1], modelMat[2],
         modelMat[4], modelMat[5], modelMat[6],
