@@ -317,6 +317,24 @@
       var SMOOTH_ROT = 0.085;
       var SMOOTH_SC = 0.06;
 
+      // ── Idle-detection state (for the "look at camera" behaviour) ──
+      // idleTime accumulates real seconds while the drone has been
+      // effectively stationary (no meaningful scroll-driven motion).
+      // Any real motion resets it immediately.
+      var idleTime = 0;
+      var lastScrollT = -1; // sentinel so the very first frame counts as "moved"
+      var IDLE_LOOK_DELAY = 5.0; // seconds of no scrolling before it turns to face us
+      var FACE_CAMERA_YAW = Math.PI / 2; // calibrated below — see heading notes
+
+      // ── Heading calibration ──────────────────────────────────────
+      // yaw = 0 was confirmed to already face LEFT (-X) correctly, and a
+      // full 180° (π rad) turn faces RIGHT (+X) — a straight small-angle
+      // "bank" formula can only ever cover a fraction of that, which is
+      // why rightward travel previously looked tail-first. VX_TURN_SCALE
+      // controls how quickly horizontal speed saturates the turn toward
+      // a full 0→π sweep; lower = snappier full turns at lower speeds.
+      var VX_TURN_SCALE = 0.02;
+
       // Randomised wander phases — generated once per load so the
       // organic weave (independent of scroll) never repeats the same
       // pattern twice, at effectively zero per-frame cost (a few sines).
@@ -475,31 +493,50 @@
         var vy = L.y - beforeY;
         var speed = Math.sqrt(vx * vx + vy * vy);
 
-        // ── Derive heading (yaw) from the FULL velocity vector ──
-        // Using both vx and vy (not just vx) means the nose tracks the
-        // true direction of travel — including the reversed direction
-        // during a backtrack dip, where vx/vy naturally flip sign and
-        // the drone visibly turns to face back the way it came, exactly
-        // like a real quad correcting course, before turning forward
-        // again once the dip ends.
-        if (speed > 0.0006) {
-          var targetYaw = Math.atan2(vx, 0.55 + Math.abs(vy) * 0.4) * 0.95;
-          targetYaw = Math.max(-1.35, Math.min(1.35, targetYaw));
-          L.yaw += (targetYaw - L.yaw) * SMOOTH_ROT;
+        // ── Idle tracking ──────────────────────────────────────────
+        // Keyed off the actual SCROLL POSITION, not on-screen speed —
+        // the continuous organic wander keeps the drone drifting a
+        // little even while the user isn't scrolling, so speed alone
+        // would never reach zero. This checks "has the user actually
+        // scrolled" and accumulates real wall-clock seconds otherwise.
+        if (Math.abs(scrollT - lastScrollT) > 0.0002) {
+          idleTime = 0;
+          lastScrollT = scrollT;
         } else {
-          L.yaw += (0 - L.yaw) * (SMOOTH_ROT * 0.4); // settle level when idle
+          idleTime += dt;
         }
+        var lookingAtCamera = idleTime >= IDLE_LOOK_DELAY;
+
+        // ── Derive heading (yaw) ─────────────────────────────────────
+        // Horizontal travel maps across the FULL 0→π sweep (not a small
+        // clamped bank) since the model's neutral pose already faces
+        // left (yaw≈0) and needs a genuine half-turn to face right
+        // (yaw≈π) — a small-angle clamp can never reach that, which is
+        // what caused rightward travel to read as flying backwards.
+        // A softsign of vx gives a smooth, saturating -1..1 value that
+        // maps directly onto that 0..π sweep, and naturally handles the
+        // reversed direction during a backtrack dip the same way.
+        if (lookingAtCamera) {
+          // Stayed still for a while — turn to look directly at the viewer.
+          L.yaw += (FACE_CAMERA_YAW - L.yaw) * (SMOOTH_ROT * 0.5);
+        } else if (speed > 0.0006) {
+          var n = vx / (Math.abs(vx) + VX_TURN_SCALE); // softsign, -1..1
+          var targetYaw = (n + 1) * (Math.PI / 2); // -1→0 (left), +1→π (right)
+          L.yaw += (targetYaw - L.yaw) * SMOOTH_ROT;
+        }
+        // else: effectively stationary but under the idle delay — hold
+        // the current heading rather than snapping anywhere.
 
         // ── Derive pitch from vertical velocity (nose up when climbing,
         //    nose down when descending — also nose-up when braking into
         //    a backtrack, matching how a real drone decelerates) ──
-        var targetPitch = Math.max(-0.5, Math.min(0.5, -vy * 9.0));
+        var targetPitch = lookingAtCamera ? 0 : Math.max(-0.5, Math.min(0.5, -vy * 9.0));
         L.pitch += (targetPitch - L.pitch) * SMOOTH_ROT;
 
         // ── Derive roll/bank from horizontal velocity — banks INTO the
         //    turn like a real quad/fixed-wing platform, including the
         //    hard bank-and-turn look when it reverses direction ──
-        var targetRoll = Math.max(-0.68, Math.min(0.68, -vx * 13.5));
+        var targetRoll = lookingAtCamera ? 0 : Math.max(-0.68, Math.min(0.68, -vx * 13.5));
         L.roll += (targetRoll - L.roll) * SMOOTH_ROT;
 
         // ── Idle hover micro-jitter — always alive, even mid-scroll-pause ──
