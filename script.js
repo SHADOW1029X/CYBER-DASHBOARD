@@ -1686,4 +1686,145 @@ window.addEventListener('unhandledrejection', e => {
     })();
   })(); } catch (e) { console.error('[NYTHERION] setupWarriorSection failed:', e); }
 
+  // SYSTEM 9b: WARRIOR AMBIENT PARTICLES & LIGHTS
+  // ────────────────────────────────────────────────────────────────
+  // A thin, separate 2D-canvas layer inside the warrior stage: a small
+  // handful of drifting dust motes plus two slow-roaming soft light
+  // glows, tinted to the scene's own icy blue/cyan palette so the room
+  // reads as a live space rather than a flat photo behind the model.
+  // Deliberately sparse — the brief was "don't over add" — and fully
+  // isolated in its own try/catch: a failure here can never affect the
+  // model render, the boot sequence, or anything else on the page.
+  try { (function setupWarriorAmbience() {
+    const stage = document.getElementById('warriorStage');
+    const section = document.getElementById('warriorSection');
+    if (!stage || !section) return;
+
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'warrior-ambience';
+    canvas.setAttribute('aria-hidden', 'true');
+
+    // Inserted BEFORE the model canvas (same z-index, DOM order decides
+    // paint order) so the particles/lights sit behind the character and
+    // only show through the transparent parts of the model render —
+    // i.e. floating in the room around the warrior, not over him.
+    const modelCanvas = document.getElementById('warriorCanvas');
+    if (modelCanvas && modelCanvas.parentElement === stage) {
+      stage.insertBefore(canvas, modelCanvas);
+    } else {
+      stage.appendChild(canvas);
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let W = 0, H = 0;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    function resize() {
+      const r = stage.getBoundingClientRect();
+      W = Math.max(1, r.width);
+      H = Math.max(1, r.height);
+      canvas.width = W * DPR;
+      canvas.height = H * DPR;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0); // draw in CSS-pixel space from here on
+    }
+    resize();
+    window.addEventListener('resize', resize, { passive: true });
+
+    // Exact accent colors from design.css (--blue / --magenta, the
+    // latter actually a cyan) so the glow reads as part of this scene's
+    // own lighting rather than a generic UI accent.
+    const PARTICLE_COLORS = { cyan: '196,240,246', blue: '178,205,255' };
+
+    // A small handful of dust motes — few in number, soft, twinkling.
+    const PARTICLE_COUNT = 14;
+    const particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random(),
+        y: Math.random(),
+        r: 0.9 + Math.random() * 1.6,
+        speed: 0.005 + Math.random() * 0.010,     // slow upward drift, screen-fractions/sec
+        driftAmp: 0.010 + Math.random() * 0.018,  // gentle side-to-side sway
+        driftFreq: 0.12 + Math.random() * 0.22,
+        phase: Math.random() * Math.PI * 2,
+        twinklePhase: Math.random() * Math.PI * 2,
+        twinkleSpeed: 0.35 + Math.random() * 0.55,
+        hue: Math.random() < 0.55 ? 'cyan' : 'blue'
+      });
+    }
+
+    // Two large, very slow-roaming soft glows — like bounced light off
+    // the crystal walls in the background photo, gently breathing.
+    const lights = [
+      { x: 0.30, y: 0.34, r: 0.40, hue: '34,198,230', baseAlpha: 0.09, speed: 0.016, phase: 0.0 },
+      { x: 0.72, y: 0.58, r: 0.34, hue: '63,140,255', baseAlpha: 0.08, speed: 0.012, phase: 2.3 }
+    ];
+
+    let raf = null;
+    let running = false;
+    const t0 = performance.now(); // never reset — pausing off-screen just skips time, no pop on resume
+
+    function frame(now) {
+      if (!running) return;
+      const t = (now - t0) / 1000;
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'lighter'; // only ever brightens, never darkens
+
+      for (let i = 0; i < lights.length; i++) {
+        const Lg = lights[i];
+        const lx = (Lg.x + Math.sin(t * Lg.speed + Lg.phase) * 0.06) * W;
+        const ly = (Lg.y + Math.cos(t * Lg.speed * 0.8 + Lg.phase) * 0.05) * H;
+        const lr = Lg.r * Math.min(W, H) * (0.92 + Math.sin(t * 0.2 + Lg.phase) * 0.08);
+        const alpha = Lg.baseAlpha * (0.85 + Math.sin(t * 0.25 + Lg.phase) * 0.15);
+        const grad = ctx.createRadialGradient(lx, ly, 0, lx, ly, lr);
+        grad.addColorStop(0, 'rgba(' + Lg.hue + ',' + alpha.toFixed(3) + ')');
+        grad.addColorStop(1, 'rgba(' + Lg.hue + ',0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        let py = p.y - ((t * p.speed) % 1);
+        if (py < -0.05) py += 1.1;
+        const px = p.x + Math.sin(t * p.driftFreq + p.phase) * p.driftAmp;
+        const twinkle = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * p.twinkleSpeed + p.twinklePhase));
+        const cx = px * W, cy = py * H;
+        const alpha = 0.5 * twinkle;
+        const glowR = p.r * 4;
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+        grad.addColorStop(0, 'rgba(' + PARTICLE_COLORS[p.hue] + ',' + alpha.toFixed(3) + ')');
+        grad.addColorStop(1, 'rgba(' + PARTICLE_COLORS[p.hue] + ',0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.globalCompositeOperation = 'source-over';
+      raf = requestAnimationFrame(frame);
+    }
+
+    function start() {
+      if (running) return;
+      running = true;
+      raf = requestAnimationFrame(frame);
+    }
+    function stop() {
+      running = false;
+      if (raf) cancelAnimationFrame(raf);
+      raf = null;
+    }
+
+    // Same "stop the loop entirely when off-screen" discipline as the
+    // model render and the drone — zero cost while scrolled away.
+    const ambienceIO = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) start(); else stop();
+    }, { threshold: 0 });
+    ambienceIO.observe(section);
+  })(); } catch (e) { console.error('[NYTHERION] setupWarriorAmbience failed:', e); }
+
 })();
