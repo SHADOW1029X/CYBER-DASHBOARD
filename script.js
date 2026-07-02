@@ -1075,10 +1075,20 @@ window.addEventListener('unhandledrejection', e => {
   // with a small hand-written shader (key + rim light + fresnel + pulsing
   // emissive glow) tuned to the page's blue/cyan palette.
   //
-  // Scroll position drives camera orbit angle (replaces the old video
-  // currentTime scrub 1:1) layered on a slow ambient idle spin. Mouse
-  // position adds a fine orbit/tilt offset (replaces the old stage
-  // parallax translate). The model itself ships embedded as base64 in a
+  // Scroll position no longer drives anything here — the model sits at a
+  // fixed angle until the user presses/touches and holds to drag-spin it
+  // (see the pointer handlers below), layered with a slow ambient idle
+  // spin while untouched. Cursor position separately adds a small,
+  // continuously-smoothed parallax offset (yaw + a slight vertical
+  // shift) any time the mouse moves anywhere in the viewport while the
+  // section is visible — that's what keeps a static camera angle from
+  // reading as a flat photo/video; the soldier (much closer to the
+  // camera) visibly shifts more than the dome walls behind him as the
+  // cursor moves, which is genuine perspective parallax rather than a
+  // 2D trick. Scoped to mouse-type pointers only, so it never conflicts
+  // with touch drag-to-spin on mobile.
+  //
+  // The model itself ships embedded as base64 in a
   // <script type="text/plain"> tag (see loadEmbeddedGLB below) rather
   // than fetched over the network, so the page works even opened
   // directly from disk — fetch() is blocked under file:// entirely,
@@ -1767,6 +1777,43 @@ window.addEventListener('unhandledrejection', e => {
     let targetYaw = 0, curYaw = 0;
     let dragging = false, dragStartX = 0, dragStartYaw = 0, activePointerId = null;
 
+    // ── ambient mouse parallax ──
+    // A static camera reads as a flat photo/video no matter how good the
+    // render is — the thing that actually sells "this is a real 3D
+    // scene" is that it visibly reacts as you move around it, even
+    // without deliberately dragging. This layers a small, continuously
+    // smoothed offset on top of the existing drag/auto-spin yaw (and a
+    // matching small vertical shift), driven by cursor position anywhere
+    // in the viewport while the section is in view. Because the soldier
+    // sits much closer to the camera than the dome walls, the same
+    // rotation shifts his silhouette noticeably more than the
+    // background — genuine perspective parallax, not a fake 2D trick.
+    //
+    // Scoped to mouse-type pointers only (checked in the listener below)
+    // so it never fires from touch drag-to-spin on mobile — touch
+    // behavior is unchanged.
+    let parallaxTX = 0, parallaxTY = 0;   // raw target, -1..1, from cursor position
+    let parallaxYaw = 0, parallaxTilt = 0; // smoothed, in radians / world units
+    const PARALLAX_YAW_MAX = 0.16;   // ~9°
+    const PARALLAX_TILT_MAX = 0.18;  // in halfHeight units, applied to eye+lookAt together
+
+    window.addEventListener('pointermove', e => {
+      if (!sectionVisible) return; // avoid a layout-forcing rect read while scrolled away
+      if (e.pointerType && e.pointerType !== 'mouse') return; // touch/pen: leave to drag-to-spin only
+      const r = stage.getBoundingClientRect();
+      // Normalized position relative to the stage, but not clamped to
+      // it — moving the mouse further past the edge keeps pushing the
+      // parallax toward its max rather than snapping, which feels more
+      // natural than a hard cutoff right at the canvas boundary.
+      parallaxTX = clamp(((e.clientX - r.left) / Math.max(r.width, 1)) * 2 - 1, -1.6, 1.6);
+      parallaxTY = clamp(((e.clientY - r.top) / Math.max(r.height, 1)) * 2 - 1, -1.6, 1.6);
+    }, { passive: true });
+    // Ease back to center rather than freezing wherever the cursor was
+    // when it left the browser window (mouseleave on document is the
+    // standard, reliable way to detect that — window itself doesn't
+    // have meaningful bounds for a "leave" event).
+    document.addEventListener('mouseleave', () => { parallaxTX = 0; parallaxTY = 0; }, { passive: true });
+
     function yawFromEvent(e) {
       const dx = e.clientX - dragStartX;
       // ~360px of drag = one full turn; feels natural for both mouse and touch.
@@ -1833,14 +1880,31 @@ window.addEventListener('unhandledrejection', e => {
 
       curYaw += (targetYaw - curYaw) * dtLerp(0.12, dt);
 
+      // Smoothed separately from curYaw (and at a snappier rate) so the
+      // ambient parallax reads as a quick, alive reaction to the cursor
+      // rather than dragging behind it — while curYaw's own catch-up
+      // stays exactly as tuned for drag/auto-spin.
+      parallaxYaw += (parallaxTX * PARALLAX_YAW_MAX - parallaxYaw) * dtLerp(0.08, dt);
+      parallaxTilt += (parallaxTY * PARALLAX_TILT_MAX - parallaxTilt) * dtLerp(0.08, dt);
+
       resizeCanvas();
 
-      const orbitAngle = curYaw;
+      const orbitAngle = curYaw + parallaxYaw;
       const aspect = canvas.width / canvas.height || 1;
 
       const dist = halfHeight * CAMERA_DIST_FACTOR;
+      // Base (un-perturbed) heights — the dome's own position below is
+      // deliberately tied to these, not the parallax-shifted camera, so
+      // the dome-clearance margin math further down stays exactly as
+      // validated (the parallax wobble is small enough that the margin
+      // barely moves either way, but keeping the dome itself stable
+      // rather than having it chase the cursor too is also just the
+      // more correct behavior — the room shouldn't move, only the
+      // camera looking into it).
       const eyeY = halfHeight * CAMERA_EYE_Y_FACTOR;
       const lookAtY = halfHeight * CAMERA_LOOKAT_Y_FACTOR;
+      const cameraEyeY = eyeY + parallaxTilt * halfHeight;
+      const cameraLookAtY = lookAtY + parallaxTilt * halfHeight;
 
       // Dome center sits ABOVE the camera's fixed orbit height by
       // DOME_Y_OFFSET_FACTOR half-heights — this is what actually brings
@@ -1851,21 +1915,24 @@ window.addEventListener('unhandledrejection', e => {
       const domeCenterY = eyeY + domeYOffset;
 
       const shipRadius = halfHeight * SHIP_RADIUS_FACTOR;
-      // Camera-to-dome-center distance is constant through the whole
-      // orbit (only x/z swing; both camera and dome-center Y are fixed),
-      // so this margin check only needs doing once, right here — not
-      // something that can drift into a clipping wall at some other
-      // point in the rotation.
+      // Camera-to-dome-center distance is ~constant through the whole
+      // orbit (only x/z swing; both camera and dome-center Y are tied to
+      // the STABLE base eyeY, not the parallax-perturbed cameraEyeY —
+      // see the comment above). The parallax tilt does add a small wobble
+      // to the camera's actual vertical position, but it's tiny relative
+      // to this margin (checked by hand: worst case moves the margin
+      // from ~60% to ~59% of the radius) — not worth folding into this
+      // calculation and losing the "basically constant" simplicity here.
       const camToDomeCenter = Math.sqrt(dist * dist + domeYOffset * domeYOffset);
       const far = shipReady ? Math.max(20, (camToDomeCenter + shipRadius) * 1.3) : 20;
       const proj = perspective(CAMERA_FOV, aspect, 0.1, far);
 
       const eye = [
         Math.sin(orbitAngle) * dist,
-        eyeY,
+        cameraEyeY,
         Math.cos(orbitAngle) * dist,
       ];
-      const view = lookAt(eye, [0, lookAtY, 0], [0, 1, 0]);
+      const view = lookAt(eye, [0, cameraLookAtY, 0], [0, 1, 0]);
 
       // Body-facing rotation about his own vertical axis — independent
       // of the camera orbit, which never changes which way he faces on
